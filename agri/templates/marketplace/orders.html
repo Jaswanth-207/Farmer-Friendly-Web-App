@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+{% block title %}My orders &mdash; AgriDirect{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>My orders</h1>
+    <p class="muted">Orders you placed with farmers on AgriDirect.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="{{ url_for('market.browse') }}">Browse marketplace</a>
+  </div>
+</div>
+
+<div class="table-wrap">
+<table class="table">
+  <thead>
+    <tr>
+      <th>Placed</th>
+      <th>Produce</th>
+      <th>Farmer</th>
+      <th class="num">Quantity</th>
+      <th class="num">Unit price</th>
+      <th class="num">Total</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for order in orders %}
+    <tr>
+      <td>{{ order.ordered_at|date_short }}</td>
+      <td><a href="{{ url_for('market.listing_detail', product_id=order.product_id) }}">{{ order.product_name }}</a></td>
+      <td>{{ order.farmer_name }}{% if order.farm_name %} <small class="muted block">{{ order.farm_name }}</small>{% endif %}</td>
+      <td class="num">{{ order.quantity|qty }} {{ order.unit }}</td>
+      <td class="num">{{ order.unit_price|money }}</td>
+      <td class="num">{{ order.total_amount|money }}</td>
+      <td>{{ status_badge(order.status) }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="muted center">You have not placed any orders yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

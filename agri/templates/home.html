@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_card %}
+{% block title %}AgriDirect &mdash; sell your harvest directly{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>Sell your harvest directly to buyers</h1>
+    <p class="lead">
+      List your produce, track every sale, and check what the market is really
+      paying before you quote a price. No middlemen, no guessing.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('auth.register', role='farmer') }}">Start selling</a>
+      <a class="btn btn-ghost" href="{{ url_for('market.browse') }}">Browse the marketplace</a>
+    </div>
+    <p class="hint">
+      Demo login &mdash; farmer <code>ramesh@demo.com</code>,
+      buyer <code>sunita@demo.com</code>, password <code>demo1234</code>.
+    </p>
+  </div>
+  <div class="hero-panel">
+    <h2>What the market is paying</h2>
+    <table class="table compact">
+      <thead>
+        <tr><th>Category</th><th class="num">Latest avg</th><th class="num">MoM</th></tr>
+      </thead>
+      <tbody>
+        {% for row in summary %}
+        <tr>
+          <td>{{ row.category }}</td>
+          <td class="num">{{ row.latest|money }}<span class="unit">/kg</span></td>
+          <td class="num">
+            {% if row.change_pct is not none %}
+              <span class="{{ 'up' if row.change_pct >= 0 else 'down' }}">
+                {{ '+' if row.change_pct >= 0 else '' }}{{ row.change_pct }}%
+              </span>
+            {% else %}&ndash;{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <a class="link" href="{{ url_for('trends.index') }}">See full price trends &rarr;</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Freshly listed</h2>
+    <a class="link" href="{{ url_for('market.browse') }}">All listings &rarr;</a>
+  </div>
+  <div class="cards">
+    {% for product in featured %}
+      {{ product_card(product) }}
+    {% else %}
+      <p class="muted">No listings yet &mdash; be the first to list your produce.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section grid-3">
+  <div class="card">
+    <h3>List in a minute</h3>
+    <p>Add produce with quantity, unit and your asking price. Stock levels update as you sell.</p>
+  </div>
+  <div class="card">
+    <h3>Track every sale</h3>
+    <p>Log counter sales and receive marketplace orders in one ledger, then confirm or cancel with one click.</p>
+  </div>
+  <div class="card">
+    <h3>Know the market</h3>
+    <p>Monthly mandi averages per category, seasonality patterns, and alerts when you are priced below market.</p>
+  </div>
+</section>
+{% endblock %}

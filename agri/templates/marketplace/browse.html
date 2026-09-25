@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_card %}
+{% block title %}Marketplace &mdash; AgriDirect{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Marketplace</h1>
+    <p class="muted">Buy directly from farmers &mdash; {{ listings|length }} listing{{ '' if listings|length == 1 else 's' }} available.</p>
+  </div>
+  {% if current_user and current_user.role == 'buyer' %}
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="{{ url_for('market.my_orders') }}">My orders</a>
+  </div>
+  {% endif %}
+</div>
+
+<form method="get" class="filters">
+  <label>
+    Search
+    <input type="search" name="q" value="{{ search }}" placeholder="Produce, farm or village">
+  </label>
+  <label>
+    Category
+    <select name="category">
+      <option value="">All categories</option>
+      {% for option in CATEGORIES %}
+      <option value="{{ option }}" {{ 'selected' if category == option }}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    Sort
+    <select name="sort">
+      <option value="recent" {{ 'selected' if sort == 'recent' }}>Recently updated</option>
+      <option value="cheap" {{ 'selected' if sort == 'cheap' }}>Lowest price</option>
+      <option value="expensive" {{ 'selected' if sort == 'expensive' }}>Highest price</option>
+    </select>
+  </label>
+  <button class="btn" type="submit">Search</button>
+  <a class="btn btn-ghost" href="{{ url_for('market.browse') }}">Reset</a>
+</form>
+
+<div class="cards">
+  {% for product in listings %}
+    {{ product_card(product) }}
+  {% else %}
+    <p class="muted">No listings match your search.</p>
+  {% endfor %}
+</div>
+
+<section class="section">
+  <h2>Category price reference</h2>
+  <div class="table-wrap">
+    <table class="table compact">
+      <thead><tr><th>Category</th><th class="num">Benchmark (per kg)</th><th class="num">Month on month</th></tr></thead>
+      <tbody>
+        {% for row in summary %}
+        <tr>
+          <td>{{ row.category }}</td>
+          <td class="num">{{ row.latest|money }}</td>
+          <td class="num">
+            {% if row.change_pct is not none %}
+            <span class="{{ 'up' if row.change_pct >= 0 else 'down' }}">
+              {{ '+' if row.change_pct >= 0 else '' }}{{ row.change_pct }}%
+            </span>
+            {% else %}&ndash;{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">Indicative wholesale averages, refreshed monthly from regional mandi data.</p>
+</section>
+{% endblock %}

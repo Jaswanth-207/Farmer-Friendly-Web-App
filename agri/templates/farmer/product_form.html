@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit listing' if product else 'New listing' }} &mdash; AgriDirect{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ 'Edit listing' if product else 'New listing' }}</h1>
+    <p class="muted">
+      Buyers see the name, price, unit, available quantity and your district.
+    </p>
+  </div>
+  {% if product %}
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="{{ url_for('market.product_detail_owner', product_id=product.id) }}">Back to listing</a>
+  </div>
+  {% endif %}
+</div>
+
+<form method="post" class="card form-grid"
+      data-price-check="{{ url_for('trends.api_prices') }}">
+  <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+
+  <label class="span-2">
+    Produce name
+    <input type="text" name="name" value="{{ values.get('name', '') }}" required maxlength="80"
+           placeholder="e.g. Tomatoes (hybrid)">
+    {% if errors.get('name') %}<small class="field-error">{{ errors.name }}</small>{% endif %}
+  </label>
+
+  <label>
+    Category
+    <select name="category" required data-category-select>
+      {% for option in CATEGORIES %}
+      <option value="{{ option }}" {{ 'selected' if values.get('category') == option }}>{{ option }}</option>
+      {% endfor %}
+    </select>
+    {% if errors.get('category') %}<small class="field-error">{{ errors.category }}</small>{% endif %}
+  </label>
+
+  <label>
+    Unit
+    <select name="unit" required data-unit-select>
+      {% for option in UNITS %}
+      <option value="{{ option }}" {{ 'selected' if values.get('unit') == option }}>{{ option }}</option>
+      {% endfor %}
+    </select>
+    {% if errors.get('unit') %}<small class="field-error">{{ errors.unit }}</small>{% endif %}
+  </label>
+
+  <label>
+    Quantity available
+    <input type="number" name="quantity_available" step="0.01" min="0"
+           value="{{ values.get('quantity_available', '') }}" required>
+    {% if errors.get('quantity_available') %}<small class="field-error">{{ errors.quantity_available }}</small>{% endif %}
+  </label>
+
+  <label>
+    Price per unit ({{ CURRENCY }})
+    <input type="number" name="price_per_unit" step="0.01" min="0.01"
+           value="{{ values.get('price_per_unit', '') }}" required data-price-input>
+    {% if errors.get('price_per_unit') %}<small class="field-error">{{ errors.price_per_unit }}</small>{% endif %}
+    <small class="muted" data-benchmark-hint data-category="{{ values.get('category', '') }}"></small>
+  </label>
+
+  <label>
+    Harvest date
+    <input type="date" name="harvest_date" value="{{ values.get('harvest_date', '') }}" max="{{ TODAY }}">
+    {% if errors.get('harvest_date') %}<small class="field-error">{{ errors.harvest_date }}</small>{% endif %}
+  </label>
+
+  <label>
+    District
+    <input type="text" name="district" value="{{ values.get('district', '') }}">
+    <small class="muted">Used to match nearby mandi prices.</small>
+  </label>
+
+  <label class="span-2">
+    Description (optional)
+    <textarea name="description" rows="3" maxlength="600"
+              placeholder="Variety, grading, packing, pickup details...">{{ values.get('description', '') }}</textarea>
+    {% if errors.get('description') %}<small class="field-error">{{ errors.description }}</small>{% endif %}
+  </label>
+
+  <div class="span-2 form-actions">
+    <button class="btn btn-primary" type="submit">{{ 'Save changes' if product else 'Publish listing' }}</button>
+    <a class="btn btn-ghost" href="{{ url_for('market.products') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" id="unit-defaults">{{ UNIT_BY_CATEGORY|tojson }}</script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

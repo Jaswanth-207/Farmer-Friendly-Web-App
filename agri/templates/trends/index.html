@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% from "_macros.html" import verdict_badge %}
+{% block title %}Market trends &mdash; AgriDirect{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Market trends</h1>
+    <p class="muted">
+      Monthly wholesale averages
+      {% if district %}for <strong>{{ district }}</strong>{% else %}across {{ series.markets_count or 'all' }} regional markets{% endif %},
+      so you can price your produce with confidence.
+    </p>
+  </div>
+  {% if current_user and current_user.district %}
+  <div class="page-actions scope-toggle">
+    <a class="btn btn-small {{ 'btn-primary' if scope == 'all' else 'btn-ghost' }}"
+       href="{{ url_for('trends.index', category=category, months=months, scope='all') }}">All markets</a>
+    <a class="btn btn-small {{ 'btn-primary' if scope == 'mine' else 'btn-ghost' }}"
+       href="{{ url_for('trends.index', category=category, months=months, scope='mine') }}">{{ current_user.district }} only</a>
+  </div>
+  {% endif %}
+</div>
+
+<form method="get" class="filters">
+  <label>
+    Category
+    <select name="category">
+      {% for option in categories %}
+      <option value="{{ option }}" {{ 'selected' if category == option }}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    Period
+    <select name="months">
+      {% for option in months_options %}
+      <option value="{{ option }}" {{ 'selected' if months == option }}>Last {{ option }} months</option>
+      {% endfor %}
+    </select>
+  </label>
+  <input type="hidden" name="scope" value="{{ scope }}">
+  <button class="btn" type="submit">Update</button>
+</form>
+
+<section class="kpi-grid">
+  <div class="kpi">
+    <span class="kpi-label">Latest average</span>
+    <span class="kpi-value">{{ series.latest|money if series.latest else '–' }}<span class="unit">/kg</span></span>
+    <span class="kpi-sub">{{ series.category }}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Period average</span>
+    <span class="kpi-value">{{ series.average|money if series.average else '–' }}<span class="unit">/kg</span></span>
+    <span class="kpi-sub">over {{ months }} months</span>
+  </div>
+  <div class="kpi {{ 'kpi-up' if (series.trend_pct or 0) >= 0 else 'kpi-down' }}">
+    <span class="kpi-label">Change over period</span>
+    <span class="kpi-value">
+      {% if series.trend_pct is not none %}
+        {{ '+' if series.trend_pct >= 0 else '' }}{{ series.trend_pct }}%
+      {% else %}–{% endif %}
+    </span>
+    <span class="kpi-sub">first vs latest month</span>
+  </div>
+  {% if season.best %}
+  <div class="kpi">
+    <span class="kpi-label">Best month historically</span>
+    <span class="kpi-value">{{ season.best.label }}</span>
+    <span class="kpi-sub">{{ season.best.delta_pct }}% vs yearly average</span>
+  </div>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <h2>{{ category }} price trend (per kg)</h2>
+    <span class="muted tiny" data-chart-status>Loading data&hellip;</span>
+  </div>
+  <div class="chart-wrap">
+    <div id="price-chart"
+         class="chart"
+         data-endpoint="{{ url_for('trends.api_prices') }}"
+         data-category="{{ category }}"
+         data-months="{{ months }}"
+         data-scope="{{ scope }}">
+      <p class="muted">Loading chart&hellip;</p>
+    </div>
+  </div>
+  <div id="price-chart-legend" class="legend"></div>
+  <p class="hint">
+    Prices are indicative wholesale averages. Hover the chart to read the exact
+    figure for each market.
+  </p>
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h2>Seasonality</h2>
+    {% if season.available %}
+    <p class="muted">
+      Historically {{ category|lower }} peaks in <strong>{{ season.best.label }}</strong>
+      ({{ season.best.delta_pct }}% above the yearly average) and bottoms in
+      <strong>{{ season.worst.label }}</strong>.
+    </p>
+    <div class="season-bars">
+      {% for point in season.points %}
+      <div class="season-row">
+        <span class="season-label">{{ point.label }}</span>
+        <div class="season-track">
+          <div class="season-bar {{ 'above' if (point.delta_pct or 0) >= 0 else 'below' }}"
+               style="width: {{ point.bar_pct }}%"></div>
+        </div>
+        <span class="season-value">{{ '+' if (point.delta_pct or 0) >= 0 else '' }}{{ point.delta_pct }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Not enough history for a seasonal breakdown.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Latest price per category</h2>
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>Category</th><th class="num">Average</th><th class="num">MoM change</th></tr></thead>
+        <tbody>
+          {% for row in summary %}
+          <tr>
+            <td><a href="{{ url_for('trends.index', category=row.category, months=months, scope=scope) }}">{{ row.category }}</a></td>
+            <td class="num">{{ row.latest|money }}<span class="unit">/kg</span></td>
+            <td class="num">
+              {% if row.change_pct is not none %}
+              <span class="{{ 'up' if row.change_pct >= 0 else 'down' }}">
+                {{ '+' if row.change_pct >= 0 else '' }}{{ row.change_pct }}%
+              </span>
+              {% else %}–{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+{% if my_listings %}
+<section class="section">
+  <h2>Your prices vs the benchmark</h2>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Your listing</th>
+          <th class="num">Your price</th>
+          <th class="num">Benchmark</th>
+          <th>Assessment</th>
+          <th class="num">Opportunity</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in my_listings %}
+        <tr>
+          <td>{{ row.product.name }} <span class="unit">/ {{ row.product.unit }}</span></td>
+          <td class="num">{{ row.product.price_per_unit|money }}</td>
+          <td class="num">{{ row.verdict.expected|money if row.verdict.available else '–' }}</td>
+          <td>{{ verdict_badge(row.verdict) }}</td>
+          <td class="num">
+            {% if row.verdict.verdict == 'below' and row.verdict.gain_per_unit %}
+              <span class="up">+{{ (row.verdict.gain_per_unit * row.product.quantity_available)|money }}</span>
+              <small class="muted block">on {{ row.product.quantity_available|qty }} {{ row.product.unit }}</small>
+            {% else %}–{% endif %}
+          </td>
+          <td><a class="btn btn-small btn-ghost" href="{{ url_for('market.edit_product', product_id=row.product.id) }}">Adjust</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">
+    Benchmarks are matched to your product unit (per kg, quintal, tonne or litre) and use
+    your own listings' district where known.
+  </p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/price-chart.js') }}"></script>
+{% endblock %}

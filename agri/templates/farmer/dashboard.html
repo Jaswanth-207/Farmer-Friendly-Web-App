@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "_macros.html" import kpi, status_badge, stock_badge %}
+{% block title %}Dashboard &mdash; AgriDirect{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Namaste, {{ current_user.name.split(' ')[0] }}</h1>
+    <p class="muted">
+      {{ current_user.farm_name or 'Your farm' }}
+      {%- if current_user.village %}, {{ current_user.village }}{% endif %}
+      {%- if current_user.district %} &middot; {{ current_user.district }}{% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-primary" href="{{ url_for('market.new_product') }}">+ New listing</a>
+    <a class="btn btn-ghost" href="{{ url_for('market.new_sale') }}">Record a sale</a>
+  </div>
+</div>
+
+{% if kpis.pending_orders %}
+<div class="callout">
+  <strong>{{ kpis.pending_orders }} order{{ '' if kpis.pending_orders == 1 else 's' }} waiting for confirmation.</strong>
+  <a href="{{ url_for('market.sales', status='pending') }}">Review them &rarr;</a>
+</div>
+{% endif %}
+
+<section class="kpi-grid">
+  {{ kpi('Revenue (confirmed)', kpis.revenue|money, kpis.sales_count ~ ' sales, ' ~ kpis.units_sold|qty ~ ' units') }}
+  {{ kpi('Last 30 days', kpis.revenue_30d|money,
+        (('+' if kpis.revenue_change_pct >= 0 else '') ~ kpis.revenue_change_pct ~ '% vs previous 30 days') if kpis.revenue_change_pct is not none else 'No prior period data',
+        'kpi-' ~ ('up' if (kpis.revenue_change_pct or 0) >= 0 else 'down')) }}
+  {{ kpi('Avg realised price', kpis.avg_price_realised|money, 'per unit sold') }}
+  {{ kpi('Stock value', kpis.stock_value|money, kpis.active_listings ~ ' active listings') }}
+  {{ kpi('Low stock', kpis.low_stock_count, 'at or below ' ~ low_stock ~ ' units',
+        'kpi-warn' if kpis.low_stock_count else '') }}
+  {{ kpi('Pending orders', kpis.pending_orders, 'awaiting confirmation',
+        'kpi-warn' if kpis.pending_orders else '') }}
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h2>Revenue, last 6 months</h2>
+    <div class="bars">
+      {% for point in monthly_revenue %}
+      <div class="bar-col" title="{{ point.label }}: {{ point.revenue|money }} from {{ point.units|qty }} units">
+        <div class="bar-track">
+          <div class="bar" style="height: {{ point.height_pct }}%"></div>
+        </div>
+        <span class="bar-value">{{ point.revenue|money }}</span>
+        <span class="bar-label">{{ point.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Best sellers</h2>
+    {% if top_products %}
+    <table class="table compact">
+      <thead><tr><th>Produce</th><th class="num">Units</th><th class="num">Revenue</th></tr></thead>
+      <tbody>
+        {% for row in top_products %}
+        <tr>
+          <td>{{ row.name }} <span class="unit">/ {{ row.unit }}</span></td>
+          <td class="num">{{ row.units|qty }}</td>
+          <td class="num">{{ row.revenue|money }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="muted">No sales recorded yet.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% if alerts %}
+<section class="section">
+  <h2>Price check &mdash; you may be underselling</h2>
+  <div class="alerts">
+    {% for alert in alerts %}
+    <div class="alert-card">
+      <div>
+        <h3>{{ alert.product.name }}</h3>
+        <p class="meta">
+          You ask {{ alert.product.price_per_unit|money }} / {{ alert.product.unit }},
+          benchmark is {{ alert.verdict.expected|money }} / {{ alert.product.unit }}.
+        </p>
+      </div>
+      <div class="alert-figures">
+        <span class="alert-upside">+{{ alert.upside_per_unit|money }} / {{ alert.product.unit }}</span>
+        <span class="muted tiny">up to {{ alert.upside_total|money }} on current stock</span>
+        <a class="link" href="{{ url_for('market.edit_product', product_id=alert.product.id) }}">Adjust price</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="hint">
+    Benchmarks combine wholesale mandi averages and asking prices of nearby farmers.
+    Use them as a guide when you negotiate.
+  </p>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="section-head">
+    <h2>Recent sales</h2>
+    <a class="link" href="{{ url_for('market.sales') }}">Full ledger &rarr;</a>
+  </div>
+  {% include "farmer/_sales_table.html" %}
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Your listings</h2>
+    <a class="link" href="{{ url_for('market.products') }}">Manage listings &rarr;</a>
+  </div>
+  <div class="cards">
+    {% for row in listing_rows %}
+    <article class="card listing-card">
+      <div class="listing-head">
+        <h3><a href="{{ url_for('market.product_detail_owner', product_id=row.product.id) }}">{{ row.product.name }}</a></h3>
+        {{ stock_badge(row.state, state_labels) }}
+      </div>
+      <p class="price">{{ row.product.price_per_unit|money }} <span class="unit">/ {{ row.product.unit }}</span></p>
+      <p class="meta">
+        {{ row.product.quantity_available|qty }} {{ row.product.unit }} in stock
+        &middot; {{ row.product.category }}
+      </p>
+      <div class="row-actions">
+        <a class="btn btn-small" href="{{ url_for('market.edit_product', product_id=row.product.id) }}">Edit</a>
+        <a class="btn btn-small btn-ghost" href="{{ url_for('market.new_sale', product_id=row.product.id) }}">Sell</a>
+      </div>
+    </article>
+    {% else %}
+      <p class="muted">
+        You have no listings yet.
+        <a href="{{ url_for('market.new_product') }}">Add your first produce</a>.
+      </p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

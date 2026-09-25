@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Sign in &mdash; AgriDirect{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Sign in</h1>
+  <p class="muted">Sign in to manage your listings and sales, or to track your orders.</p>
+  <form method="post" class="stack">
+    <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+    <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+    <label>
+      Email
+      <input type="email" name="email" value="{{ email }}" required autocomplete="email" autofocus>
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" required autocomplete="current-password">
+    </label>
+    <button class="btn btn-primary" type="submit">Sign in</button>
+  </form>
+  <p class="hint">
+    Try the demo accounts: <code>ramesh@demo.com</code> (farmer) or
+    <code>sunita@demo.com</code> (buyer) with password <code>demo1234</code>.
+  </p>
+  <p class="muted">New here? <a href="{{ url_for('auth.register') }}">Create an account</a>.</p>
+</section>
+{% endblock %}

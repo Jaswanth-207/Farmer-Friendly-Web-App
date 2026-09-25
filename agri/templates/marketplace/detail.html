@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_macros.html" import verdict_badge, price_note %}
+{% block title %}{{ product.name }} &mdash; AgriDirect{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ product.name }}</h1>
+    <p class="muted">
+      {{ product.category }} &middot; {{ product.quantity_available|qty }} {{ product.unit }} available
+      {%- if product.harvest_date %} &middot; harvested {{ product.harvest_date|date_short }}{% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="{{ url_for('market.browse') }}">Back to marketplace</a>
+  </div>
+</div>
+
+<section class="grid-2">
+  <div class="card">
+    <p class="price big">{{ product.price_per_unit|money }} <span class="unit">/ {{ product.unit }}</span></p>
+    {{ verdict_badge(verdict) }}
+    {{ price_note(product, verdict) }}
+    {% if product.description %}<p class="desc">{{ product.description }}</p>{% endif %}
+    <dl class="facts">
+      <dt>Farmer</dt><dd>{{ product.farmer_name }}</dd>
+      <dt>Farm</dt><dd>{{ product.farm_name or '—' }}</dd>
+      <dt>Location</dt>
+      <dd>{{ [product.village, product.farmer_district, product.farmer_state]|select|join(', ') or '—' }}</dd>
+      <dt>Contact</dt><dd>{{ product.farmer_phone or 'Shared after you order' }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2>Place an order</h2>
+    {% if current_user %}
+      {% if current_user.id == product.farmer_id %}
+        <p class="muted">This is your own listing &mdash; manage it from your dashboard.</p>
+      {% else %}
+      <form method="post" action="{{ url_for('market.place_order', product_id=product.id) }}" class="stack">
+        <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+        <label>
+          Quantity ({{ product.unit }})
+          <input type="number" name="quantity" step="0.01" min="0.01"
+                 max="{{ product.quantity_available }}" required value="1">
+          <small class="muted">Maximum {{ product.quantity_available|qty }} {{ product.unit }}</small>
+        </label>
+        <label>
+          Your phone
+          <input type="tel" name="phone" value="{{ current_user.phone or '' }}">
+        </label>
+        <label>
+          Note to the farmer (optional)
+          <textarea name="notes" rows="2" maxlength="400" placeholder="Delivery date, pickup point, packing..."></textarea>
+        </label>
+        <button class="btn btn-primary" type="submit">Place order</button>
+        <p class="hint">
+          The farmer confirms your order before stock is reserved. Payment is settled
+          directly between you and the farmer.
+        </p>
+      </form>
+      {% endif %}
+    {% else %}
+      <p class="muted">Sign in as a buyer to place an order.</p>
+      <div class="row-actions">
+        <a class="btn btn-primary" href="{{ url_for('auth.login', next=request.path) }}">Sign in</a>
+        <a class="btn btn-ghost" href="{{ url_for('auth.register', role='buyer') }}">Create buyer account</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, stock_badge, verdict_badge, price_note, kpi %}
+{% block title %}{{ product.name }} &mdash; AgriDirect{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ product.name }}</h1>
+    <p class="muted">
+      {{ product.category }} &middot; {{ product.unit }}
+      {%- if product.district %} &middot; {{ product.district }}{% endif %}
+      &middot; listed {{ product.created_at|date_short }}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="{{ url_for('market.new_sale', product_id=product.id) }}">Record sale</a>
+    <a class="btn btn-ghost" href="{{ url_for('market.edit_product', product_id=product.id) }}">Edit</a>
+    <a class="btn btn-ghost" href="{{ url_for('market.products') }}">All listings</a>
+  </div>
+</div>
+
+<section class="kpi-grid">
+  {{ kpi('Price', product.price_per_unit|money, 'per ' ~ product.unit) }}
+  {{ kpi('In stock', product.quantity_available|qty, product.unit) }}
+  {{ kpi('Units sold', totals.units|qty, 'confirmed sales') }}
+  {{ kpi('Revenue', totals.revenue|money, 'from this listing') }}
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <div class="listing-head">
+      <h2>Listing health</h2>
+      {{ stock_badge(state, state_labels) }}
+    </div>
+    <p>{{ verdict_badge(verdict) }}</p>
+    {{ price_note(product, verdict) }}
+    {% if product.description %}<p class="desc">{{ product.description }}</p>{% endif %}
+    <dl class="facts">
+      <dt>Harvest date</dt><dd>{{ product.harvest_date|date_short }}</dd>
+      <dt>Paused?</dt><dd>{{ 'Yes' if not product.is_active else 'No' }}</dd>
+      <dt>Stock value</dt><dd>{{ (product.price_per_unit * product.quantity_available)|money }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2>What to do next</h2>
+    <ul class="checklist">
+      {% if state == 'sold-out' %}
+      <li>This listing is sold out &mdash; relist it once your next harvest is picked.</li>
+      {% elif state == 'low' %}
+      <li>Stock is low ({{ product.quantity_available|qty }} {{ product.unit }} left). Update the quantity after your next harvest.</li>
+      {% else %}
+      <li>Stock looks healthy. Keep the harvest date fresh so buyers trust the listing.</li>
+      {% endif %}
+      {% if verdict.verdict == 'below' %}
+      <li>You are priced below the benchmark. Raising the price to {{ verdict.expected|money }} would add about {{ verdict.gain_per_unit|money }} per {{ product.unit }}.</li>
+      {% elif verdict.verdict == 'above' %}
+      <li>Your price is above the benchmark, so expect negotiation. Consider a bulk discount.</li>
+      {% elif verdict.verdict == 'fair' %}
+      <li>Your price is in line with the market &mdash; a strong position to negotiate from.</li>
+      {% endif %}
+      {% if not product.is_active %}
+      <li>This listing is paused and hidden from buyers. Relist it to start selling again.</li>
+      {% endif %}
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Sales from this listing</h2>
+  {% set recent_sales = sales %}
+  {% include "farmer/_sales_table.html" %}
+  <p class="hint">
+    Pending marketplace orders do not reduce stock. Stock is deducted when you confirm
+    an order and restored if you cancel it.
+  </p>
+</section>
+{% endblock %}

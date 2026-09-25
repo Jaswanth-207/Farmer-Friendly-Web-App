@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, kpi %}
+{% block title %}Sales &mdash; AgriDirect{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Sales ledger</h1>
+    <p class="muted">Counter sales you recorded plus orders placed through the marketplace.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-primary" href="{{ url_for('market.new_sale') }}">+ Record a sale</a>
+    <a class="btn btn-ghost" href="{{ url_for('market.export_sales', **request.args.to_dict()) }}">Export CSV</a>
+  </div>
+</div>
+
+<section class="kpi-grid">
+  {{ kpi('Sales', totals.orders, 'rows matching filters') }}
+  {{ kpi('Revenue', totals.revenue|money, 'confirmed + completed') }}
+  {{ kpi('Units sold', totals.units|qty, 'across all matching sales') }}
+  {{ kpi('Pending value', totals.pending_value|money, 'awaiting your confirmation') }}
+</section>
+
+<form method="get" class="filters">
+  <label>
+    Listing
+    <select name="product">
+      <option value="">All listings</option>
+      {% for option in product_options %}
+      <option value="{{ option.id }}" {{ 'selected' if filters.product == option.id|string }}>{{ option.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    Status
+    <select name="status">
+      <option value="">Any status</option>
+      {% for option in ORDER_STATUSES %}
+      <option value="{{ option }}" {{ 'selected' if filters.status == option }}>{{ option|capitalize }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    Channel
+    <select name="channel">
+      <option value="">Any channel</option>
+      {% for key, label in CHANNEL_LABELS.items() %}
+      <option value="{{ key }}" {{ 'selected' if filters.channel == key }}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    From
+    <input type="date" name="start" value="{{ filters.start }}">
+  </label>
+  <label>
+    To
+    <input type="date" name="end" value="{{ filters.end }}">
+  </label>
+  <button class="btn" type="submit">Apply</button>
+  <a class="btn btn-ghost" href="{{ url_for('market.sales') }}">Reset</a>
+</form>
+
+<div class="table-wrap">
+<table class="table">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Produce</th>
+      <th>Buyer</th>
+      <th class="num">Quantity</th>
+      <th class="num">Unit price</th>
+      <th class="num">Total</th>
+      <th>Channel</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for sale in sales %}
+    <tr>
+      <td>{{ sale.ordered_at|date_short }}</td>
+      <td>{{ sale.product_name }}</td>
+      <td>
+        {{ sale.buyer_name }}
+        {% if sale.buyer_phone %}<small class="muted block">{{ sale.buyer_phone }}</small>{% endif %}
+      </td>
+      <td class="num">{{ sale.quantity|qty }} {{ sale.unit }}</td>
+      <td class="num">{{ sale.unit_price|money }}</td>
+      <td class="num">{{ sale.total_amount|money }}</td>
+      <td class="muted">{{ CHANNEL_LABELS.get(sale.channel, sale.channel) }}</td>
+      <td>{{ status_badge(sale.status) }}</td>
+      <td class="row-actions">
+        {% if sale.status == 'pending' %}
+        <form method="post" action="{{ url_for('market.update_sale_status', order_id=sale.id) }}" class="inline-form">
+          <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+          <input type="hidden" name="status" value="confirmed">
+          <button class="btn btn-small" type="submit">Confirm</button>
+        </form>
+        {% endif %}
+        {% if sale.status == 'confirmed' %}
+        <form method="post" action="{{ url_for('market.update_sale_status', order_id=sale.id) }}" class="inline-form">
+          <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+          <input type="hidden" name="status" value="completed">
+          <button class="btn btn-small" type="submit">Complete</button>
+        </form>
+        {% endif %}
+        {% if sale.status in ('pending', 'confirmed') %}
+        <form method="post" action="{{ url_for('market.update_sale_status', order_id=sale.id) }}" class="inline-form"
+              data-confirm="Cancel this sale? Stock will be returned to the listing.">
+          <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+          <input type="hidden" name="status" value="cancelled">
+          <button class="btn btn-small btn-danger" type="submit">Cancel</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9" class="muted center">No sales match these filters.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="hint">
+  Showing the latest 200 matching sales. Stock is deducted when a sale is marked
+  <em>confirmed</em> or <em>completed</em>, and returned if it is cancelled.
+</p>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

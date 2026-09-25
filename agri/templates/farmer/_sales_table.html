@@ -1,0 +1,43 @@
+{% from "_macros.html" import status_badge %}
+<div class="table-wrap">
+<table class="table">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Produce</th>
+      <th>Buyer</th>
+      <th class="num">Quantity</th>
+      <th class="num">Unit price</th>
+      <th class="num">Total</th>
+      <th>Status</th>
+      <th>Channel</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for sale in recent_sales %}
+    <tr>
+      <td>{{ sale.ordered_at|date_short }}</td>
+      <td>{{ sale.product_name }}</td>
+      <td>{{ sale.buyer_name }}</td>
+      <td class="num">{{ sale.quantity|qty }} {{ sale.unit }}</td>
+      <td class="num">{{ sale.unit_price|money }}</td>
+      <td class="num">{{ sale.total_amount|money }}</td>
+      <td>{{ status_badge(sale.status) }}</td>
+      <td class="muted">{{ CHANNEL_LABELS.get(sale.channel, sale.channel) }}</td>
+      <td>
+        {% if sale.status == 'pending' %}
+        <form method="post" action="{{ url_for('market.update_sale_status', order_id=sale.id) }}" class="inline-form">
+          <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+          <input type="hidden" name="status" value="confirmed">
+          <button class="btn btn-small" type="submit">Confirm</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9" class="muted center">No sales recorded yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Record a sale &mdash; AgriDirect{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Record a sale</h1>
+    <p class="muted">
+      Log a counter sale or an order you took over the phone. Confirming it here
+      updates your stock immediately.
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="{{ url_for('market.sales') }}">Sales ledger</a>
+  </div>
+</div>
+
+<form method="post" class="card form-grid">
+  <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+
+  <label class="span-2">
+    Listing
+    <select name="product_id" required data-sale-product>
+      <option value="">Choose produce...</option>
+      {% for option in product_options %}
+      <option value="{{ option.id }}"
+              data-price="{{ option.price_per_unit }}"
+              data-unit="{{ option.unit }}"
+              data-stock="{{ option.quantity_available }}"
+              {{ 'selected' if selected_product and selected_product.id == option.id }}>
+        {{ option.name }} &mdash; {{ option.quantity_available|qty }} {{ option.unit }} left
+      </option>
+      {% endfor %}
+    </select>
+    {% if not product_options %}
+    <small class="field-error">Add an active listing first, then record sales against it.</small>
+    {% endif %}
+  </label>
+
+  <label>
+    Quantity sold
+    <input type="number" name="quantity" step="0.01" min="0.01" required
+           value="{{ values.get('quantity', '') }}" data-sale-quantity>
+  </label>
+
+  <label>
+    Unit price ({{ CURRENCY }})
+    <input type="number" name="unit_price" step="0.01" min="0.01"
+           value="{{ values.get('unit_price', '') }}" data-sale-price>
+  </label>
+
+  <label>
+    Sale total
+    <output class="total-output" data-sale-total>&mdash;</output>
+    <small class="muted" data-sale-stock></small>
+  </label>
+
+  <label>
+    Status
+    <select name="status">
+      {% for option in ORDER_STATUSES %}
+      <option value="{{ option }}" {{ 'selected' if values.get('status', 'completed') == option }}>{{ option|capitalize }}</option>
+      {% endfor %}
+    </select>
+    <small class="muted">Pending does not deduct stock; confirmed and completed do.</small>
+  </label>
+
+  <label>
+    Buyer name
+    <input type="text" name="buyer_name" required value="{{ values.get('buyer_name', '') }}"
+           placeholder="Trader, retailer or hotel">
+  </label>
+
+  <label>
+    Buyer phone (optional)
+    <input type="tel" name="buyer_phone" value="{{ values.get('buyer_phone', '') }}">
+  </label>
+
+  <label>
+    Sale date
+    <input type="date" name="ordered_at" value="{{ values.get('ordered_at', TODAY) }}" max="{{ TODAY }}">
+  </label>
+
+  <label class="span-2">
+    Notes (optional)
+    <textarea name="notes" rows="2" maxlength="400">{{ values.get('notes', '') }}</textarea>
+  </label>
+
+  <div class="span-2 form-actions">
+    <button class="btn btn-primary" type="submit">Record sale</button>
+    <a class="btn btn-ghost" href="{{ url_for('market.sales') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

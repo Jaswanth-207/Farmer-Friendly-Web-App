@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" data-currency="{{ CURRENCY }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AgriDirect{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="{{ url_for('market.home') }}">
+      <span class="brand-mark">AD</span>
+      <span>
+        <strong>AgriDirect</strong>
+        <small>farm to buyer, no middlemen</small>
+      </span>
+    </a>
+    <nav class="nav">
+      {% if current_user %}
+        {% if current_user.role == 'farmer' %}
+          <a href="{{ url_for('market.dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('market.products') }}">My listings</a>
+          <a href="{{ url_for('market.sales') }}">Sales</a>
+        {% else %}
+          <a href="{{ url_for('market.my_orders') }}">My orders</a>
+        {% endif %}
+        <a href="{{ url_for('market.browse') }}">Marketplace</a>
+        <a href="{{ url_for('trends.index') }}">Market trends</a>
+        <form method="post" action="{{ url_for('auth.logout') }}" class="inline-form">
+          <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost" type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('market.browse') }}">Marketplace</a>
+        <a href="{{ url_for('trends.index') }}">Market trends</a>
+        <a href="{{ url_for('auth.login') }}">Sign in</a>
+        <a class="btn btn-primary" href="{{ url_for('auth.register') }}">Create account</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flashes">
+        {% for category, message in messages %}
+          <p class="flash flash-{{ category }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>
+      AgriDirect &mdash; a direct farmer-to-buyer platform. Benchmark prices are
+      indicative wholesale (mandi) averages, not a guarantee of sale price.
+    </p>
+    {% if current_user %}
+      <p class="tiny">Signed in as {{ current_user.name }} ({{ current_user.role }})</p>
+    {% endif %}
+  </div>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

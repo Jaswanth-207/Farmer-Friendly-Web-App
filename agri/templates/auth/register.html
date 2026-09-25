@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Create account &mdash; AgriDirect{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Create your account</h1>
+  <form method="post" class="stack">
+    <input type="hidden" name="{{ csrf_field_name }}" value="{{ csrf_token() }}">
+
+    <fieldset class="role-picker">
+      <legend>I am a</legend>
+      {% set role = values.get('role', 'farmer') %}
+      <label class="role-option">
+        <input type="radio" name="role" value="farmer" {{ 'checked' if role != 'buyer' }} data-toggle-role>
+        <span><strong>Farmer</strong> &mdash; list produce and track sales</span>
+      </label>
+      <label class="role-option">
+        <input type="radio" name="role" value="buyer" {{ 'checked' if role == 'buyer' }} data-toggle-role>
+        <span><strong>Buyer</strong> &mdash; browse the marketplace and place orders</span>
+      </label>
+    </fieldset>
+
+    <label>
+      Full name
+      <input type="text" name="name" value="{{ values.get('name', '') }}" required minlength="2">
+      {% if errors.get('name') %}<small class="field-error">{{ errors.name }}</small>{% endif %}
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" value="{{ values.get('email', '') }}" required>
+      {% if errors.get('email') %}<small class="field-error">{{ errors.email }}</small>{% endif %}
+    </label>
+    <label>
+      Phone (optional)
+      <input type="tel" name="phone" value="{{ values.get('phone', '') }}" placeholder="98xxxxxxxx">
+    </label>
+
+    <div data-farm-fields>
+      <label>
+        Farm / business name
+        <input type="text" name="farm_name" value="{{ values.get('farm_name', '') }}">
+      </label>
+      <div class="grid-3">
+        <label>
+          Village
+          <input type="text" name="village" value="{{ values.get('village', '') }}">
+        </label>
+        <label>
+          District
+          <input type="text" name="district" value="{{ values.get('district', '') }}">
+          <small class="muted">Used to compare your price with nearby mandi rates.</small>
+        </label>
+        <label>
+          State
+          <input type="text" name="state" value="{{ values.get('state', '') }}">
+        </label>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <label>
+        Password
+        <input type="password" name="password" required minlength="8" autocomplete="new-password">
+        {% if errors.get('password') %}<small class="field-error">{{ errors.password }}</small>{% endif %}
+      </label>
+      <label>
+        Confirm password
+        <input type="password" name="confirm" required minlength="8" autocomplete="new-password">
+        {% if errors.get('confirm') %}<small class="field-error">{{ errors.confirm }}</small>{% endif %}
+      </label>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Create account</button>
+  </form>
+  <p class="muted">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a>.</p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Farmers get the farm-detail fields; buyers don't need them.
+  document.querySelectorAll('[data-toggle-role]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var isFarmer = document.querySelector('input[value="farmer"]').checked;
+      document.querySelector('[data-farm-fields]').hidden = !isFarmer;
+    });
+    input.dispatchEvent(new Event('change'));
+  });
+</script>
+{% endblock %}
