@@ -26,7 +26,9 @@ export default function Login() {
       const u = JSON.parse(localStorage.getItem("agri_users") || "[]").find(
         (x) => x.email.toLowerCase() === email.toLowerCase()
       );
-      if (u?.role === "buyer") {
+      if (u?.role === "admin") {
+        navigate("/admin");
+      } else if (u?.role === "buyer") {
         navigate("/marketplace");
       } else {
         navigate("/dashboard");
@@ -102,6 +104,13 @@ export default function Login() {
               style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--cyan)", padding: "2px 8px", borderRadius: "4px", fontSize: "0.75rem", cursor: "pointer" }}
             >
               Sunita (Buyer)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEmail("admin@demo.com"); setPassword("demo1234"); }}
+              style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--purple)", padding: "2px 8px", borderRadius: "4px", fontSize: "0.75rem", cursor: "pointer" }}
+            >
+              Admin (Monitor)
             </button>
           </div>
 

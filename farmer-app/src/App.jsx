@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import Layout from "./layouts/Layout";
-import { FarmerRoute, BuyerRoute } from "./components/RouteGuards";
+import { FarmerRoute, BuyerRoute, AdminRoute } from "./components/RouteGuards";
 
 // Eagerly load primary Review 1 entry page; lazy-load secondary routes for faster initial load
 import Home from "./pages/Home";
@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Products = lazy(() => import("./pages/Products"));
 const ProductForm = lazy(() => import("./pages/ProductForm"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
@@ -110,6 +111,16 @@ export default function App() {
                     <BuyerRoute>
                       <Orders />
                     </BuyerRoute>
+                  }
+                />
+
+                {/* Admin Protected Routes */}
+                <Route
+                  path="admin"
+                  element={
+                    <AdminRoute>
+                      <AdminDashboard />
+                    </AdminRoute>
                   }
                 />
 

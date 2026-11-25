@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   Layers,
   Receipt,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function Layout() {
@@ -59,7 +60,12 @@ export default function Layout() {
           <nav className={`nav ${mobileMenuOpen ? "open" : ""}`} aria-label="Primary navigation">
             {user ? (
               <>
-                {user.role === "farmer" ? (
+                {user.role === "admin" ? (
+                  <NavLink to="/admin" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
+                    <ShieldCheck size={15} className="nav-icon" />
+                    Admin Monitor
+                  </NavLink>
+                ) : user.role === "farmer" ? (
                   <>
                     <NavLink to="/dashboard" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
                       <LayoutDashboard size={15} className="nav-icon" />

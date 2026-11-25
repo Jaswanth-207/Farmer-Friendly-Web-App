@@ -30,6 +30,8 @@ const USERS = [
     farm_name:"Devi Organics", village:"Barwani", district:"Indore", state:"Madhya Pradesh" },
   { id:3, role:"buyer", name:"Sunita Traders", email:"sunita@demo.com", phone:"9873344556",
     farm_name:"Sunita Wholesale", village:"Nashik Road", district:"Nashik", state:"Maharashtra" },
+  { id:4, role:"admin", name:"Admin Monitor", email:"admin@demo.com", phone:"9000000000",
+    farm_name:"AgriDirect Platform", village:"HQ", district:"Pune", state:"Maharashtra" },
 ];
 
 // ---------- demo listings ----------
@@ -163,6 +165,14 @@ export function initStore() {
     localStorage.setItem("agri_market_prices", JSON.stringify(generateMarketPrices()));
     localStorage.setItem("agri_next_product_id", "16");
     localStorage.setItem("agri_next_order_id", "50");
+  } else {
+    // Ensure seeded admin account exists for existing browser sessions
+    const existingUsers = JSON.parse(localStorage.getItem("agri_users") || "[]");
+    const adminUser = USERS.find((u) => u.role === "admin");
+    if (adminUser && !existingUsers.some((u) => u.email.toLowerCase() === adminUser.email.toLowerCase())) {
+      existingUsers.push({ ...adminUser, id: existingUsers.length + 1 });
+      localStorage.setItem("agri_users", JSON.stringify(existingUsers));
+    }
   }
 }
 
