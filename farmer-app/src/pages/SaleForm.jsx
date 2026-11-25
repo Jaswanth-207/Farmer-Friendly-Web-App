@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../components/Toast";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
 import {
   getProductsByFarmer,
   addOrder,
-  formatMoney,
-} from "../data/store";
-import { ORDER_STATUSES } from "../data/seed";
+} from "../services/storageService";
+import { formatMoney } from "../utils/formatters";
 import { ArrowLeft, Receipt, Check } from "lucide-react";
 
 export default function SaleForm() {
@@ -25,7 +24,7 @@ export default function SaleForm() {
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [status, setStatus] = useState("completed");
-  const [orderedAt, setOrderedAt] = useState(new Date().toISOString().slice(0, 10));
+  const [orderedAt, setOrderedAt] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
 

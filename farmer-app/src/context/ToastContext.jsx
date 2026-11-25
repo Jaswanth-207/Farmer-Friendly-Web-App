@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
+import { ToastContext } from "./contexts";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, AlertCircle, AlertTriangle, X } from "lucide-react";
-
-const ToastContext = createContext(null);
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
@@ -22,7 +21,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      <div className="toast-container">
+      <div className="toast-container" aria-live="polite">
         <AnimatePresence>
           {toasts.map((toast) => (
             <motion.div
@@ -38,6 +37,8 @@ export function ToastProvider({ children }) {
               {toast.type === "warning" && <AlertTriangle size={18} className="shrink-0" />}
               <span style={{ flex: 1 }}>{toast.message}</span>
               <button
+                type="button"
+                aria-label="Dismiss notification"
                 onClick={() => removeToast(toast.id)}
                 style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", display: "flex", padding: 0 }}
               >
@@ -49,10 +50,4 @@ export function ToastProvider({ children }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
-  return ctx;
 }

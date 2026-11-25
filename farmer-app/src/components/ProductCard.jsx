@@ -1,10 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MapPin, Calendar, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
-import { formatMoney, formatQty } from "../data/store";
+import { MapPin, Calendar } from "lucide-react";
+import { formatMoney, formatQty } from "../utils/formatters";
 
-export default function ProductCard({ product, showOwnerActions = false, onToggle, onDelete }) {
+export default function ProductCard({ product, showOwnerActions = false }) {
   const isLowStock = product.quantity_available > 0 && product.quantity_available <= 25;
   const isSoldOut = product.quantity_available <= 0;
 
@@ -13,7 +13,7 @@ export default function ProductCard({ product, showOwnerActions = false, onToggl
       whileHover={{ y: -6, transition: { duration: 0.2 } }}
       className="product-card"
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
         <span className="category-tag">{product.category}</span>
         {product.is_active === 0 ? (
           <span className="badge badge-gray">Paused</span>
@@ -34,7 +34,9 @@ export default function ProductCard({ product, showOwnerActions = false, onToggl
       </div>
 
       <div className="meta">
-        <span>Stock: <strong>{formatQty(product.quantity_available)} {product.unit}</strong></span>
+        <span>
+          Stock: <strong>{formatQty(product.quantity_available)} {product.unit}</strong>
+        </span>
         {product.district && (
           <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
             <MapPin size={13} /> {product.district}
@@ -48,12 +50,18 @@ export default function ProductCard({ product, showOwnerActions = false, onToggl
         </div>
       )}
 
-      {product.description && (
-        <p className="desc">{product.description}</p>
-      )}
+      {product.description && <p className="desc">{product.description}</p>}
 
       {product.farmer_name && (
-        <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "auto", paddingTop: "8px", borderTop: "1px solid var(--border)" }}>
+        <div
+          style={{
+            fontSize: "0.8rem",
+            color: "var(--text-muted)",
+            marginTop: "auto",
+            paddingTop: "8px",
+            borderTop: "1px solid var(--border)",
+          }}
+        >
           Farmer: <strong>{product.farmer_name}</strong> {product.farm_name ? `(${product.farm_name})` : ""}
         </div>
       )}
@@ -61,7 +69,11 @@ export default function ProductCard({ product, showOwnerActions = false, onToggl
       <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
         {showOwnerActions ? (
           <>
-            <Link to={`/products/${product.id}`} className="btn btn-ghost btn-sm" style={{ flex: 1, textAlign: "center", justifyContent: "center" }}>
+            <Link
+              to={`/products/${product.id}`}
+              className="btn btn-ghost btn-sm"
+              style={{ flex: 1, textAlign: "center", justifyContent: "center" }}
+            >
               Manage
             </Link>
             <Link to={`/products/${product.id}/edit`} className="btn btn-ghost btn-sm">
@@ -74,11 +86,10 @@ export default function ProductCard({ product, showOwnerActions = false, onToggl
             className="btn btn-primary btn-sm"
             style={{ width: "100%", textAlign: "center", justifyContent: "center" }}
           >
-            View & Buy
+            View &amp; Buy
           </Link>
         )}
       </div>
     </motion.div>
   );
 }
-

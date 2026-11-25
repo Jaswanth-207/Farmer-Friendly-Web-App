@@ -1,30 +1,22 @@
 import React, { useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../components/Toast";
+import { useToast } from "../hooks/useToast";
 import {
   getProductById,
   getOrders,
   toggleProduct,
   deleteProduct,
   getCategorySeries,
-  formatMoney,
-  formatQty,
-} from "../data/store";
+} from "../services/storageService";
+import { formatMoney, formatQty } from "../utils/formatters";
 import {
   ArrowLeft,
   Edit,
   Power,
   Trash2,
-  TrendingUp,
-  TrendingDown,
   CheckCircle,
   AlertTriangle,
-  MapPin,
-  Calendar,
-  Layers,
-  ShoppingBag,
 } from "lucide-react";
 
 export default function ProductDetail() {

@@ -1,26 +1,27 @@
 import React, { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../components/Toast";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
 import {
   getProductById,
   getUserById,
   addOrder,
   getCategorySeries,
+} from "../services/storageService";
+import {
   formatMoney,
   formatQty,
-} from "../data/store";
+  normalizePriceToKg,
+  getUnitBenchmarkPrice,
+  isBenchmarkComparableUnit,
+} from "../utils/formatters";
 import {
   ArrowLeft,
   MapPin,
   Calendar,
-  Phone,
-  CheckCircle,
-  AlertTriangle,
   ShoppingBag,
   ShieldCheck,
-  TrendingUp,
 } from "lucide-react";
 
 export default function MarketplaceDetail() {
@@ -37,13 +38,14 @@ export default function MarketplaceDetail() {
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
 
-  // Mandi benchmark comparison
+  // Mandi benchmark comparison (normalized to ₹/kg for weight-based units)
   const benchmark = useMemo(() => {
-    if (!product) return null;
+    if (!product || !isBenchmarkComparableUnit(product.unit)) return null;
     const series = getCategorySeries(product.category, 6);
-    const mandiAvg = series.latest || series.average || 30;
-    const asking = product.price_per_unit;
-    const diffPct = ((asking - mandiAvg) / mandiAvg) * 100;
+    const mandiAvgPerKg = series.latest || series.average || 30;
+    const normalizedAskingPerKg = normalizePriceToKg(product.price_per_unit, product.unit);
+    const diffPct = ((normalizedAskingPerKg - mandiAvgPerKg) / mandiAvgPerKg) * 100;
+    const mandiEquivalentInUnit = getUnitBenchmarkPrice(mandiAvgPerKg, product.unit);
 
     let verdict = "fair";
     let label = "Fair Market Price";
@@ -55,7 +57,13 @@ export default function MarketplaceDetail() {
       label = "Premium Grade";
     }
 
-    return { mandiAvg, diffPct: diffPct.toFixed(1), verdict, label };
+    return {
+      mandiAvgPerKg,
+      mandiEquivalentInUnit,
+      diffPct: diffPct.toFixed(1),
+      verdict,
+      label,
+    };
   }, [product]);
 
   const totalCost = useMemo(() => {
@@ -160,7 +168,8 @@ export default function MarketplaceDetail() {
                 <ShieldCheck size={16} /> {benchmark.label}
               </div>
               <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                Regional APMC benchmark: <strong>{formatMoney(benchmark.mandiAvg)}/kg</strong> ({benchmark.diffPct >= 0 ? "+" : ""}{benchmark.diffPct}%)
+                Regional APMC benchmark: <strong>{formatMoney(benchmark.mandiEquivalentInUnit)} / {product.unit}</strong>{" "}
+                ({formatMoney(benchmark.mandiAvgPerKg)}/kg, {Number(benchmark.diffPct) >= 0 ? "+" : ""}{benchmark.diffPct}%)
               </div>
             </div>
           )}

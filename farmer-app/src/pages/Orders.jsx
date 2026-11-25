@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { getOrdersByBuyer, formatMoney, formatQty } from "../data/store";
-import { ShoppingBag, ArrowRight, Clock, CheckCircle2, PackageCheck } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { getOrdersByBuyer } from "../services/storageService";
+import { formatMoney, formatQty } from "../utils/formatters";
+import { ShoppingBag, ArrowRight } from "lucide-react";
 
 export default function Orders() {
   const { user } = useAuth();

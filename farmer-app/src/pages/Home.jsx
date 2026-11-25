@@ -1,8 +1,9 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, TrendingUp, TrendingDown, Sparkles, CheckCircle2, ShieldCheck, Zap, BarChart2 } from "lucide-react";
-import { getActiveProducts, getCategorySummary, formatMoney, getUsers } from "../data/store";
+import { ArrowRight, TrendingUp, TrendingDown, Sparkles, ShieldCheck, Zap, BarChart2 } from "lucide-react";
+import { getActiveProducts, getCategorySummary, getUsers } from "../services/storageService";
+import { formatMoney } from "../utils/formatters";
 import ProductCard from "../components/ProductCard";
 
 export default function Home() {

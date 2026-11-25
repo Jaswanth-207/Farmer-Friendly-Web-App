@@ -79,16 +79,19 @@ a:hover { color: var(--primary-hover); }
 .brand small { font-size: .72rem; color: var(--text-muted); font-weight: 400; }
 
 .nav { display: flex; align-items: center; gap: .25rem; }
-.nav a, .nav button {
+.nav a, .nav button.nav-link {
   padding: .5rem .875rem; border-radius: var(--radius-sm);
   font-size: .85rem; font-weight: 500; color: var(--text-muted);
   transition: all var(--transition); background: none; border: none; cursor: pointer;
-  white-space: nowrap;
+  white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
 }
-.nav a:hover, .nav button:hover { color: var(--text); background: var(--bg-card); }
+.nav a:hover { color: var(--text); background: var(--bg-card); }
 .nav a.active { color: var(--primary); background: var(--green-glow); }
+.nav-icon { flex-shrink: 0; }
+.nav-cta { margin-left: 6px; }
 
-.hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: .5rem; }
+.hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: .5rem; border-radius: var(--radius-sm); }
+.hamburger:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ---- BUTTONS ---- */
 .btn {
@@ -287,16 +290,29 @@ a:hover { color: var(--primary-hover); }
 .empty-state h3 { font-size: 1.25rem; color: var(--text-muted); margin-bottom: .5rem; }
 
 /* ---- RESPONSIVE ---- */
+@media (max-width: 1024px) {
+  .hero { grid-template-columns: 1fr; gap: 2rem; padding: 2.5rem 0; }
+  .hero h1 { font-size: 2.35rem; }
+}
+
 @media (max-width: 768px) {
-  .hero { grid-template-columns: 1fr; padding: 2rem 0; }
+  .hero { padding: 1.75rem 0; }
   .hero h1 { font-size: 2rem; }
-  .header-inner { flex-wrap: wrap; }
-  .nav { display: none; width: 100%; flex-direction: column; padding-top: .75rem; }
+  .header-inner { flex-wrap: wrap; padding: .75rem 1rem; }
+  .nav { display: none; width: 100%; flex-direction: column; align-items: stretch; padding-top: .75rem; gap: .35rem; }
   .nav.open { display: flex; }
+  .nav-cta { margin-left: 0; margin-top: .25rem; justify-content: center; }
   .hamburger { display: block; }
   .form-row { grid-template-columns: 1fr; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .main-content { padding: 1rem; }
+  .main-content { padding: 1.25rem 1rem; }
+  .filters-bar .form-input, .filters-bar .form-select { width: 100%; }
+  .section-head { flex-wrap: wrap; gap: .75rem; }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr; }
 }
 
 /* ---- ANIMATION HELPERS ---- */

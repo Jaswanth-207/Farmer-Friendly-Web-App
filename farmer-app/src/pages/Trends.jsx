@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -12,13 +11,15 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { getCategorySeries, getCategorySummary, formatMoney } from "../data/store";
+import { getCategorySeries, getCategorySummary } from "../services/storageService";
+import { formatMoney, formatMonthLabel } from "../utils/formatters";
 import { CATEGORIES } from "../data/seed";
-import { TrendingUp, TrendingDown, BarChart3, Calendar, Layers, MapPin } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 export default function Trends() {
   const [selectedCategory, setSelectedCategory] = useState("Vegetables");
   const [monthsWindow, setMonthsWindow] = useState(12);
+  const chartSectionRef = useRef(null);
 
   const seriesData = useMemo(() => {
     return getCategorySeries(selectedCategory, monthsWindow);
@@ -138,22 +139,23 @@ export default function Trends() {
 
       {/* INTERACTIVE PRICE CHART */}
       <motion.div
+        ref={chartSectionRef}
         key={`${selectedCategory}-${monthsWindow}`}
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         className="chart-card"
         style={{ marginBottom: "2rem" }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
             <h2 style={{ fontSize: "1.2rem", fontWeight: 700 }}>{selectedCategory} Price History (₹ / kg)</h2>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Comparing Nashik, Pune, Indore, Raipur, and Azadpur APMCs</p>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Comparing Nashik, Pune, Indore, Raipur, and Azadpur APMCs (per kg wholesale)</p>
           </div>
         </div>
 
         <div style={{ width: "100%", height: 350 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="mandiGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#22c55e" stopOpacity={0.4} />
@@ -161,9 +163,22 @@ export default function Trends() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} />
-              <YAxis stroke="#64748b" fontSize={11} tickLine={false} unit="₹" />
+              <XAxis
+                dataKey="month"
+                stroke="#64748b"
+                fontSize={11}
+                tickLine={false}
+                tickFormatter={formatMonthLabel}
+              />
+              <YAxis
+                stroke="#64748b"
+                fontSize={11}
+                tickLine={false}
+                tickFormatter={(v) => `₹${v}`}
+              />
               <Tooltip
+                labelFormatter={formatMonthLabel}
+                formatter={(value) => [value != null ? `${formatMoney(value)} / kg` : "—"]}
                 contentStyle={{
                   backgroundColor: "#111827",
                   borderColor: "#1e293b",
@@ -233,7 +248,11 @@ export default function Trends() {
                   </td>
                   <td style={{ textAlign: "right" }}>
                     <button
-                      onClick={() => setSelectedCategory(row.category)}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(row.category);
+                        chartSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
                       className="btn btn-ghost btn-sm"
                     >
                       View Chart

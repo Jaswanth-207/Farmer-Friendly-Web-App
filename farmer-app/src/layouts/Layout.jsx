@@ -1,10 +1,21 @@
 import React, { useState } from "react";
 import { NavLink, Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "./Toast";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
 import { AnimatePresence } from "framer-motion";
-import PageTransition from "./PageTransition";
-import { Sprout, Menu, X, LogOut, User, BarChart3, ShoppingBag, LayoutDashboard, Layers, Receipt } from "lucide-react";
+import PageTransition from "../components/PageTransition";
+import {
+  Sprout,
+  Menu,
+  X,
+  LogOut,
+  User,
+  BarChart3,
+  ShoppingBag,
+  LayoutDashboard,
+  Layers,
+  Receipt,
+} from "lucide-react";
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -36,52 +47,54 @@ export default function Layout() {
           </Link>
 
           <button
+            type="button"
             className="hamburger"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
             aria-label="Toggle navigation"
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
-          <nav className={`nav ${mobileMenuOpen ? "open" : ""}`}>
+          <nav className={`nav ${mobileMenuOpen ? "open" : ""}`} aria-label="Primary navigation">
             {user ? (
               <>
                 {user.role === "farmer" ? (
                   <>
                     <NavLink to="/dashboard" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
-                      <LayoutDashboard size={15} style={{ display: "inline", marginRight: "6px", verticalAlign: "-2px" }} />
+                      <LayoutDashboard size={15} className="nav-icon" />
                       Dashboard
                     </NavLink>
                     <NavLink to="/products" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
-                      <Layers size={15} style={{ display: "inline", marginRight: "6px", verticalAlign: "-2px" }} />
+                      <Layers size={15} className="nav-icon" />
                       My Listings
                     </NavLink>
                     <NavLink to="/sales" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
-                      <Receipt size={15} style={{ display: "inline", marginRight: "6px", verticalAlign: "-2px" }} />
+                      <Receipt size={15} className="nav-icon" />
                       Sales
                     </NavLink>
                   </>
                 ) : (
                   <NavLink to="/orders" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
-                    <Receipt size={15} style={{ display: "inline", marginRight: "6px", verticalAlign: "-2px" }} />
+                    <Receipt size={15} className="nav-icon" />
                     My Orders
                   </NavLink>
                 )}
                 <NavLink to="/marketplace" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
-                  <ShoppingBag size={15} style={{ display: "inline", marginRight: "6px", verticalAlign: "-2px" }} />
+                  <ShoppingBag size={15} className="nav-icon" />
                   Marketplace
                 </NavLink>
                 <NavLink to="/trends" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
-                  <BarChart3 size={15} style={{ display: "inline", marginRight: "6px", verticalAlign: "-2px" }} />
+                  <BarChart3 size={15} className="nav-icon" />
                   Price Trends
                 </NavLink>
                 <button
+                  type="button"
                   onClick={() => {
                     closeMenu();
                     handleLogout();
                   }}
-                  className="btn btn-ghost btn-sm"
-                  style={{ marginLeft: "6px" }}
+                  className="btn btn-ghost btn-sm nav-cta"
                 >
                   <LogOut size={14} />
                   Sign out
@@ -90,18 +103,18 @@ export default function Layout() {
             ) : (
               <>
                 <NavLink to="/marketplace" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
-                  <ShoppingBag size={15} style={{ display: "inline", marginRight: "6px", verticalAlign: "-2px" }} />
+                  <ShoppingBag size={15} className="nav-icon" />
                   Marketplace
                 </NavLink>
                 <NavLink to="/trends" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
-                  <BarChart3 size={15} style={{ display: "inline", marginRight: "6px", verticalAlign: "-2px" }} />
+                  <BarChart3 size={15} className="nav-icon" />
                   Price Trends
                 </NavLink>
                 <NavLink to="/login" onClick={closeMenu} className={({ isActive }) => (isActive ? "active" : "")}>
-                  <User size={15} style={{ display: "inline", marginRight: "6px", verticalAlign: "-2px" }} />
+                  <User size={15} className="nav-icon" />
                   Sign in
                 </NavLink>
-                <Link to="/register" onClick={closeMenu} className="btn btn-primary btn-sm" style={{ marginLeft: "8px" }}>
+                <Link to="/register" onClick={closeMenu} className="btn btn-primary btn-sm nav-cta">
                   Get Started
                 </Link>
               </>
@@ -131,4 +144,3 @@ export default function Layout() {
     </div>
   );
 }
-

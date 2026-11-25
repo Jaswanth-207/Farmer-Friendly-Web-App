@@ -1,10 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { getActiveProducts, getUsers, formatMoney } from "../data/store";
+import { motion } from "framer-motion";
+import { getActiveProducts, getUsers } from "../services/storageService";
 import { CATEGORIES } from "../data/seed";
 import ProductCard from "../components/ProductCard";
-import { Search, SlidersHorizontal, ShoppingBag, Sparkles } from "lucide-react";
+import { Search, ShoppingBag, Sparkles } from "lucide-react";
 
 export default function Marketplace() {
   const [search, setSearch] = useState("");
@@ -93,12 +92,18 @@ export default function Marketplace() {
 
         {(search || category) && (
           <button
+            type="button"
             onClick={() => { setSearch(""); setCategory(""); }}
             className="btn btn-ghost btn-sm"
           >
             Clear Filters
           </button>
         )}
+      </div>
+
+      <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
+        Showing <strong>{listings.length}</strong> available {listings.length === 1 ? "listing" : "listings"}
+        {category ? ` in ${category}` : ""}
       </div>
 
       {/* CATEGORY QUICK FILTER PILLS */}

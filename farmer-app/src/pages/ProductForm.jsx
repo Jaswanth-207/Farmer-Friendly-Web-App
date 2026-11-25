@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../components/Toast";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
 import {
   getProductById,
   addProduct,
   updateProduct,
-} from "../data/store";
+} from "../services/storageService";
 import { CATEGORIES, UNITS, UNIT_BY_CATEGORY } from "../data/seed";
 import { ArrowLeft, Save, Sprout } from "lucide-react";
 
@@ -18,39 +18,42 @@ export default function ProductForm() {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    category: "Vegetables",
-    unit: UNIT_BY_CATEGORY["Vegetables"],
-    quantity_available: "",
-    price_per_unit: "",
-    description: "",
-    harvest_date: new Date().toISOString().slice(0, 10),
-    district: user?.district || "Nashik",
+  const [formData, setFormData] = useState(() => {
+    if (isEdit) {
+      const p = getProductById(+id);
+      if (p) {
+        return {
+          name: p.name,
+          category: p.category,
+          unit: p.unit,
+          quantity_available: p.quantity_available,
+          price_per_unit: p.price_per_unit,
+          description: p.description || "",
+          harvest_date: p.harvest_date || "",
+          district: p.district || "",
+        };
+      }
+    }
+    return {
+      name: "",
+      category: "Vegetables",
+      unit: UNIT_BY_CATEGORY["Vegetables"],
+      quantity_available: "",
+      price_per_unit: "",
+      description: "",
+      harvest_date: new Date().toISOString().slice(0, 10),
+      district: user?.district || "Nashik",
+    };
   });
 
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (isEdit) {
-      const p = getProductById(+id);
-      if (!p) {
-        addToast("Listing not found", "error");
-        navigate("/products");
-        return;
-      }
-      setFormData({
-        name: p.name,
-        category: p.category,
-        unit: p.unit,
-        quantity_available: p.quantity_available,
-        price_per_unit: p.price_per_unit,
-        description: p.description || "",
-        harvest_date: p.harvest_date || "",
-        district: p.district || "",
-      });
+    if (isEdit && !getProductById(+id)) {
+      addToast("Listing not found", "error");
+      navigate("/products");
     }
-  }, [id, isEdit]);
+  }, [id, isEdit, addToast, navigate]);
 
   const handleCategoryChange = (e) => {
     const newCat = e.target.value;

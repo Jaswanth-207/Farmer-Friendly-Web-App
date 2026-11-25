@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../components/Toast";
+import { motion } from "framer-motion";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
 import { UserPlus, Sprout, ShoppingCart, ArrowRight } from "lucide-react";
 
 export default function Register() {

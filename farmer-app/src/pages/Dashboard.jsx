@@ -1,26 +1,19 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import {
   getFarmerKPIs,
   getMonthlyRevenue,
   getProductsByFarmer,
   getOrdersByFarmer,
-  formatMoney,
-  formatQty,
-} from "../data/store";
+} from "../services/storageService";
+import { formatMoney, formatQty } from "../utils/formatters";
 import {
   TrendingUp,
   TrendingDown,
-  Layers,
-  DollarSign,
-  PackageCheck,
   AlertTriangle,
   PlusCircle,
-  ArrowRight,
-  Clock,
-  CheckCircle,
 } from "lucide-react";
 
 export default function Dashboard() {

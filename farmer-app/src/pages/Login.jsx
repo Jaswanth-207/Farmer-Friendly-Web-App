@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../components/Toast";
-import { LogIn, Lock, Mail, ArrowRight } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
+import { LogIn, ArrowRight } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("ramesh@demo.com");

@@ -1,17 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../components/Toast";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
 import {
   getProductsByFarmer,
   toggleProduct,
   deleteProduct,
-  formatMoney,
-  formatQty,
-} from "../data/store";
+} from "../services/storageService";
+import { formatMoney, formatQty } from "../utils/formatters";
 import { CATEGORIES } from "../data/seed";
-import { PlusCircle, Search, Filter, Edit, Power, Trash2, Eye } from "lucide-react";
+import { PlusCircle, Search, Edit, Power, Trash2, Eye } from "lucide-react";
 
 export default function Products() {
   const { user } = useAuth();
@@ -24,6 +23,7 @@ export default function Products() {
   const [trigger, setTrigger] = useState(0);
 
   const products = useMemo(() => {
+    void trigger;
     let list = getProductsByFarmer(farmerId);
     if (search.trim()) {
       const q = search.toLowerCase();

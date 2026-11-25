@@ -1,17 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../components/Toast";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
 import {
   getOrdersByFarmer,
   getProductsByFarmer,
   updateOrderStatus,
-  formatMoney,
-  formatQty,
-} from "../data/store";
+} from "../services/storageService";
+import { formatMoney, formatQty } from "../utils/formatters";
 import { ORDER_STATUSES } from "../data/seed";
-import { PlusCircle, Download, Search, CheckCircle, Clock, XCircle, Filter } from "lucide-react";
+import { PlusCircle, Download, Search } from "lucide-react";
 
 export default function Sales() {
   const { user } = useAuth();
@@ -26,6 +25,7 @@ export default function Sales() {
   const products = useMemo(() => getProductsByFarmer(farmerId), [farmerId]);
 
   const sales = useMemo(() => {
+    void trigger;
     let list = getOrdersByFarmer(farmerId).sort(
       (a, b) => new Date(b.ordered_at) - new Date(a.ordered_at)
     );
