@@ -12,7 +12,8 @@ import {
   updateOrderStatus,
 } from "../services/storageService";
 import { CATEGORIES, ORDER_STATUSES, resetStore } from "../data/seed";
-import { formatMoney, formatQty } from "../utils/formatters";
+import { formatMoney, formatQty, exportToCsv } from "../utils/formatters";
+import ConfirmModal from "../components/ConfirmModal";
 import {
   ShieldCheck,
   Users,
@@ -42,6 +43,7 @@ export default function AdminDashboard() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const users = useMemo(() => {
     void refreshKey;
@@ -152,7 +154,11 @@ export default function AdminDashboard() {
   };
 
   const handleOrderStatus = (orderId, newStatus) => {
-    updateOrderStatus(orderId, newStatus);
+    const res = updateOrderStatus(orderId, newStatus);
+    if (res?.error) {
+      addToast(res.error, "error");
+      return;
+    }
     setRefreshKey((k) => k + 1);
     addToast(`Order #${orderId} updated to ${newStatus}.`, "success");
   };
@@ -162,32 +168,25 @@ export default function AdminDashboard() {
     const rows = filteredOrders.map((o) => [
       o.id,
       o.ordered_at,
-      `"${userMap[o.farmer_id]?.name || `Farmer #${o.farmer_id}`}"`,
-      `"${o.buyer_name}"`,
-      `"${o.product_name || "Produce"}"`,
+      userMap[o.farmer_id]?.name || `Farmer #${o.farmer_id}`,
+      o.buyer_name,
+      o.product_name || "Produce",
       o.quantity,
       o.unit,
       o.total_amount,
       o.channel,
       o.status,
     ]);
-    const csv = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const link = document.createElement("a");
-    link.setAttribute("href", encodeURI(csv));
-    link.setAttribute("download", `agridirect_platform_orders_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToCsv(`agridirect_platform_orders_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
     addToast("Platform orders exported to CSV.", "success");
   };
 
-  const handleResetDemo = () => {
-    if (window.confirm("Reset all demo users, listings, orders, and market prices back to defaults?")) {
-      resetStore();
-      localStorage.setItem("agri_session", String(user.id));
-      setRefreshKey((k) => k + 1);
-      addToast("Demo dataset restored to initial defaults.", "success");
-    }
+  const handleResetDemoConfirm = () => {
+    resetStore();
+    localStorage.setItem("agri_session", String(user.id));
+    setRefreshKey((k) => k + 1);
+    setResetModalOpen(false);
+    addToast("Demo dataset restored to initial defaults.", "success");
   };
 
   return (
@@ -208,7 +207,7 @@ export default function AdminDashboard() {
           <button type="button" onClick={handleExportOrdersCSV} className="btn btn-ghost btn-sm">
             <Download size={14} /> Export Orders CSV
           </button>
-          <button type="button" onClick={handleResetDemo} className="btn btn-ghost btn-sm" style={{ color: "var(--yellow)" }}>
+          <button type="button" onClick={() => setResetModalOpen(true)} className="btn btn-ghost btn-sm" style={{ color: "var(--yellow)" }}>
             <RotateCcw size={14} /> Reset Demo Data
           </button>
         </div>
@@ -585,6 +584,15 @@ export default function AdminDashboard() {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={resetModalOpen}
+        title="Reset Demo Dataset"
+        message="Reset all demo users, produce listings, orders, and APMC Mandi prices back to their initial seeded defaults?"
+        confirmLabel="Reset Demo Data"
+        onConfirm={handleResetDemoConfirm}
+        onCancel={() => setResetModalOpen(false)}
+      />
     </div>
   );
 }

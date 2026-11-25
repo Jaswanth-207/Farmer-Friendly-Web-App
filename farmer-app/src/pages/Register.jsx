@@ -31,6 +31,22 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
+    if (!formData.name.trim()) {
+      setError("Full name is required.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (formData.phone.trim() && !/^[0-9+\-\s]{7,15}$/.test(formData.phone.trim())) {
+      setError("Please enter a valid contact phone number.");
+      return;
+    }
+    if (!formData.district.trim()) {
+      setError("District is required.");
+      return;
+    }
     if (formData.password.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
@@ -45,6 +61,7 @@ export default function Register() {
       name: formData.name.trim(),
       email: formData.email.trim(),
       phone: formData.phone.trim(),
+      password: formData.password,
       farm_name: role === "farmer" ? formData.farm_name.trim() : "",
       village: formData.village.trim(),
       district: formData.district.trim(),
@@ -252,6 +269,9 @@ export default function Register() {
             Sign in
           </Link>
         </div>
+        <p style={{ textAlign: "center", marginTop: "0.75rem", fontSize: "0.74rem", color: "var(--text-dim)" }}>
+          Demo mode: accounts are stored locally in your browser&apos;s localStorage (no backend server).
+        </p>
       </motion.div>
     </div>
   );

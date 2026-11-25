@@ -50,3 +50,27 @@ export function getUnitBenchmarkPrice(mandiPerKg, unit = "kg") {
 export function isBenchmarkComparableUnit(unit = "kg") {
   return Object.prototype.hasOwnProperty.call(UNIT_TO_KG_FACTOR, unit);
 }
+
+/**
+ * Exports tabular rows to a UTF-8 CSV file download with proper quote escaping.
+ */
+export function exportToCsv(filename, headers, rows) {
+  const escapeCell = (cell) => {
+    const str = cell == null ? "" : String(cell);
+    return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  };
+  const csvBody = [
+    headers.map(escapeCell).join(","),
+    ...rows.map((row) => row.map(escapeCell).join(",")),
+  ].join("\r\n");
+
+  const blob = new Blob(["\uFEFF" + csvBody], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

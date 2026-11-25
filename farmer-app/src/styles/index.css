@@ -289,6 +289,21 @@ a:hover { color: var(--primary-hover); }
 .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-dim); }
 .empty-state h3 { font-size: 1.25rem; color: var(--text-muted); margin-bottom: .5rem; }
 
+/* ---- CONFIRM MODAL ---- */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 120;
+  background: rgba(5, 8, 15, 0.72);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.modal-card {
+  width: 100%; max-width: 440px;
+  background: var(--bg-card); border: 1px solid var(--border-hover);
+  border-radius: var(--radius-lg); padding: 1.5rem;
+  box-shadow: var(--shadow-lg);
+}
+
 /* ---- RESPONSIVE ---- */
 @media (max-width: 1024px) {
   .hero { grid-template-columns: 1fr; gap: 2rem; padding: 2.5rem 0; }

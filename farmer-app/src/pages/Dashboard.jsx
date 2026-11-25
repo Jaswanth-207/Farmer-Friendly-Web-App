@@ -144,7 +144,7 @@ export default function Dashboard() {
       </motion.div>
 
       {/* TWO COLUMN GRID: ACTIVE LISTINGS & RECENT SALES */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "1.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: "1.5rem" }}>
         {/* ACTIVE LISTINGS */}
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>

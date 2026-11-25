@@ -5,7 +5,7 @@ import { ToastProvider } from "./context/ToastContext";
 import Layout from "./layouts/Layout";
 import { FarmerRoute, BuyerRoute, AdminRoute } from "./components/RouteGuards";
 
-// Eagerly load primary Review 1 entry page; lazy-load secondary routes for faster initial load
+// Eagerly load primary Review 1 entry page; lazy-load secondary routes for               faster initial load
 import Home from "./pages/Home";
 
 const Login = lazy(() => import("./pages/Login"));

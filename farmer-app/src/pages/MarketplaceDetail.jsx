@@ -99,6 +99,11 @@ export default function MarketplaceDetail() {
       return;
     }
 
+    if (!product.is_active || product.quantity_available <= 0) {
+      setError("This produce listing is currently unavailable or sold out.");
+      return;
+    }
+
     const q = parseFloat(quantity);
     if (isNaN(q) || q <= 0) {
       setError("Please enter a valid quantity.");
@@ -109,7 +114,7 @@ export default function MarketplaceDetail() {
       return;
     }
 
-    addOrder({
+    const res = addOrder({
       product_id: product.id,
       farmer_id: product.farmer_id,
       buyer_id: user.id,
@@ -125,6 +130,12 @@ export default function MarketplaceDetail() {
       product_name: product.name,
       unit: product.unit,
     });
+
+    if (res?.error) {
+      setError(res.error);
+      addToast(res.error, "error");
+      return;
+    }
 
     addToast(`Order placed for ${q} ${product.unit} of '${product.name}'!`, "success");
     navigate("/orders");

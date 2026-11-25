@@ -8,7 +8,7 @@ import {
   getProductsByFarmer,
   updateOrderStatus,
 } from "../services/storageService";
-import { formatMoney, formatQty } from "../utils/formatters";
+import { formatMoney, formatQty, exportToCsv } from "../utils/formatters";
 import { ORDER_STATUSES } from "../data/seed";
 import { PlusCircle, Download, Search } from "lucide-react";
 
@@ -59,7 +59,11 @@ export default function Sales() {
   }, [sales]);
 
   const handleStatusChange = (orderId, newStatus) => {
-    updateOrderStatus(orderId, newStatus);
+    const res = updateOrderStatus(orderId, newStatus);
+    if (res?.error) {
+      addToast(res.error, "error");
+      return;
+    }
     setTrigger((t) => t + 1);
     addToast(`Sale marked as ${newStatus}.`, "success");
   };
@@ -69,8 +73,8 @@ export default function Sales() {
     const rows = sales.map((s) => [
       s.id,
       s.ordered_at,
-      `"${s.product_name || "Produce"}"`,
-      `"${s.buyer_name}"`,
+      s.product_name || "Produce",
+      s.buyer_name,
       s.quantity,
       s.unit,
       s.unit_price,
@@ -79,14 +83,7 @@ export default function Sales() {
       s.status,
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `agridirect_sales_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToCsv(`agridirect_sales_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
     addToast("Sales ledger exported to CSV.", "success");
   };
 

@@ -10,6 +10,7 @@ import {
 } from "../services/storageService";
 import { formatMoney, formatQty } from "../utils/formatters";
 import { CATEGORIES } from "../data/seed";
+import ConfirmModal from "../components/ConfirmModal";
 import { PlusCircle, Search, Edit, Power, Trash2, Eye } from "lucide-react";
 
 export default function Products() {
@@ -21,6 +22,7 @@ export default function Products() {
   const [category, setCategory] = useState("");
   const [stateFilter, setStateFilter] = useState("");
   const [trigger, setTrigger] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const products = useMemo(() => {
     void trigger;
@@ -51,12 +53,12 @@ export default function Products() {
     addToast(`'${name}' is now ${isActive ? "paused" : "active"}.`, "success");
   };
 
-  const handleDelete = (id, name) => {
-    if (window.confirm(`Are you sure you want to delete or pause '${name}'?`)) {
-      deleteProduct(id);
-      setTrigger((t) => t + 1);
-      addToast(`'${name}' deleted or retired.`, "success");
-    }
+  const handleDeleteConfirm = () => {
+    if (!deleteTarget) return;
+    deleteProduct(deleteTarget.id);
+    setTrigger((t) => t + 1);
+    addToast(`'${deleteTarget.name}' deleted or retired.`, "success");
+    setDeleteTarget(null);
   };
 
   return (
@@ -198,7 +200,7 @@ export default function Products() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDelete(p.id, p.name)}
+                            onClick={() => setDeleteTarget({ id: p.id, name: p.name })}
                             className="btn btn-ghost btn-sm btn-icon"
                             title="Delete listing"
                             style={{ color: "var(--red)" }}
@@ -215,6 +217,20 @@ export default function Products() {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Delete or Retire Listing"
+        message={
+          deleteTarget
+            ? `Are you sure you want to delete '${deleteTarget.name}'? Listings with existing orders will be paused instead of permanently removed.`
+            : ""
+        }
+        confirmLabel="Delete Listing"
+        danger
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

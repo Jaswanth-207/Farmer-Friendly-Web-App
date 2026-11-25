@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useToast } from "../hooks/useToast";
@@ -9,7 +9,14 @@ import {
   deleteProduct,
   getCategorySeries,
 } from "../services/storageService";
-import { formatMoney, formatQty } from "../utils/formatters";
+import {
+  formatMoney,
+  formatQty,
+  normalizePriceToKg,
+  getUnitBenchmarkPrice,
+  isBenchmarkComparableUnit,
+} from "../utils/formatters";
+import ConfirmModal from "../components/ConfirmModal";
 import {
   ArrowLeft,
   Edit,
@@ -23,6 +30,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const product = useMemo(() => getProductById(+id), [id]);
 
   const sales = useMemo(() => {
@@ -38,13 +46,14 @@ export default function ProductDetail() {
     return { units, revenue, count: completed.length };
   }, [sales]);
 
-  // Fair price comparison with mandi benchmarks
+  // Fair price comparison with mandi benchmarks (normalized to ₹/kg for weight-based units)
   const benchmark = useMemo(() => {
-    if (!product) return null;
+    if (!product || !isBenchmarkComparableUnit(product.unit)) return null;
     const series = getCategorySeries(product.category, 6);
-    const mandiAvg = series.latest || series.average || 30;
-    const asking = product.price_per_unit;
-    const diffPct = ((asking - mandiAvg) / mandiAvg) * 100;
+    const mandiAvgPerKg = series.latest || series.average || 30;
+    const normalizedAskingPerKg = normalizePriceToKg(product.price_per_unit, product.unit);
+    const diffPct = ((normalizedAskingPerKg - mandiAvgPerKg) / mandiAvgPerKg) * 100;
+    const mandiEquivalentInUnit = getUnitBenchmarkPrice(mandiAvgPerKg, product.unit);
 
     let verdict = "fair";
     let label = "Fair Market Price";
@@ -52,14 +61,21 @@ export default function ProductDetail() {
     if (diffPct <= -10) {
       verdict = "below";
       label = "Priced Below Mandi Average";
-      message = `You are quoting ₹${Math.abs(mandiAvg - asking).toFixed(2)} less than regional benchmarks. Consider raising your price.`;
+      message = `You are quoting ${formatMoney(Math.abs(mandiEquivalentInUnit - product.price_per_unit))} per ${product.unit} less than regional benchmarks. Consider raising your price.`;
     } else if (diffPct >= 10) {
       verdict = "above";
       label = "Premium Asking Price";
       message = "You are quoting above average Mandi rates (export or organic grade).";
     }
 
-    return { mandiAvg, diffPct: diffPct.toFixed(1), verdict, label, message };
+    return {
+      mandiAvgPerKg,
+      mandiEquivalentInUnit,
+      diffPct: diffPct.toFixed(1),
+      verdict,
+      label,
+      message,
+    };
   }, [product]);
 
   if (!product) {
@@ -80,12 +96,11 @@ export default function ProductDetail() {
     navigate("/products");
   };
 
-  const handleDelete = () => {
-    if (window.confirm(`Delete '${product.name}'?`)) {
-      deleteProduct(product.id);
-      addToast(`Listing removed.`, "success");
-      navigate("/products");
-    }
+  const handleDeleteConfirm = () => {
+    deleteProduct(product.id);
+    setConfirmDeleteOpen(false);
+    addToast("Listing removed or retired.", "success");
+    navigate("/products");
   };
 
   return (
@@ -123,7 +138,7 @@ export default function ProductDetail() {
           <button onClick={handleToggle} className="btn btn-ghost btn-sm">
             <Power size={14} /> {product.is_active ? "Pause" : "Relist"}
           </button>
-          <button onClick={handleDelete} className="btn btn-ghost btn-sm" style={{ color: "var(--red)" }}>
+          <button type="button" onClick={() => setConfirmDeleteOpen(true)} className="btn btn-ghost btn-sm" style={{ color: "var(--red)" }}>
             <Trash2 size={14} /> Delete
           </button>
         </div>
@@ -153,7 +168,9 @@ export default function ProductDetail() {
               {benchmark.label} ({benchmark.diffPct >= 0 ? "+" : ""}{benchmark.diffPct}% vs Mandi)
             </div>
             <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-              {benchmark.message} Regional APMC average: <strong>{formatMoney(benchmark.mandiAvg)}/kg</strong>.
+              {benchmark.message} Regional APMC average:{" "}
+              <strong>{formatMoney(benchmark.mandiEquivalentInUnit)} / {product.unit}</strong>{" "}
+              ({formatMoney(benchmark.mandiAvgPerKg)}/kg).
             </p>
           </div>
           <Link to="/trends" className="btn btn-ghost btn-sm">
@@ -234,6 +251,16 @@ export default function ProductDetail() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={confirmDeleteOpen}
+        title="Delete or Retire Listing"
+        message={`Are you sure you want to delete '${product.name}'? Listings with existing orders will be paused instead of permanently removed.`}
+        confirmLabel="Delete Listing"
+        danger
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   );
 }

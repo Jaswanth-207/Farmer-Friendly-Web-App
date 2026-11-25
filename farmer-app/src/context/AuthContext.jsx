@@ -1,20 +1,36 @@
 import { useState } from "react";
 import { AuthContext } from "./contexts";
-import { getUserByEmail, getUserById } from "../services/storageService";
+import { getUserByEmail, getUserById, getUsers, saveUsers } from "../services/storageService";
 import { DEMO_PASSWORD } from "../data/seed";
+
+function sanitizeUser(u) {
+  if (!u) return null;
+  const { password: _password, ...safeUser } = u;
+  return safeUser;
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem("agri_session");
-    return stored ? getUserById(+stored) : null;
+    return stored ? sanitizeUser(getUserById(+stored)) : null;
   });
 
   function login(email, password) {
-    const u = getUserByEmail(email);
+    const trimmedEmail = (email || "").trim();
+    if (!trimmedEmail || !password) {
+      return "Please enter both email and password.";
+    }
+    const u = getUserByEmail(trimmedEmail);
     if (!u) return "Incorrect email or password.";
-    if (password !== DEMO_PASSWORD) return "Incorrect email or password.";
+
+    // Support stored per-user password, falling back to DEMO_PASSWORD for legacy seeded records
+    const expectedPassword = u.password || DEMO_PASSWORD;
+    if (password !== expectedPassword) {
+      return "Incorrect email or password.";
+    }
+
     localStorage.setItem("agri_session", String(u.id));
-    setUser(u);
+    setUser(sanitizeUser(u));
     return null;
   }
 
@@ -24,15 +40,31 @@ export function AuthProvider({ children }) {
   }
 
   function register(data) {
-    const users = JSON.parse(localStorage.getItem("agri_users") || "[]");
-    if (users.find((u) => u.email.toLowerCase() === data.email.toLowerCase())) {
+    const users = getUsers();
+    const email = (data.email || "").trim();
+    if (!email) return "Email address is required.";
+    if (!data.password || data.password.length < 8) {
+      return "Password must be at least 8 characters.";
+    }
+    if (users.find((u) => u.email.toLowerCase() === email.toLowerCase())) {
       return "An account with this email already exists.";
     }
-    const newUser = { ...data, id: users.length + 1 };
-    users.push(newUser);
-    localStorage.setItem("agri_users", JSON.stringify(users));
+
+    const nextId = users.reduce((max, u) => Math.max(max, Number(u.id) || 0), 0) + 1;
+    const newUser = {
+      ...data,
+      id: nextId,
+      email,
+      password: data.password,
+    };
+
+    const saved = saveUsers([...users, newUser]);
+    if (!saved) {
+      return "Unable to save account in browser storage.";
+    }
+
     localStorage.setItem("agri_session", String(newUser.id));
-    setUser(newUser);
+    setUser(sanitizeUser(newUser));
     return null;
   }
 

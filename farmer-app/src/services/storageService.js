@@ -3,18 +3,42 @@
  * Manages users, produce listings, orders, and APMC Mandi price benchmarks.
  */
 
-import { formatMonthLabel } from "../utils/formatters";
+import { formatMonthLabel } from "../utils/formatters.js";
 
-// ---------- generic helpers ----------
-const get = (key) => JSON.parse(localStorage.getItem(key) || "[]");
-const set = (key, val) => localStorage.setItem(key, JSON.stringify(val));
+const STOCK_DEDUCTING_STATUSES = new Set(["confirmed", "completed"]);
+
+// ---------- safe storage helpers ----------
+function get(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function set(key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // ---------- users ----------
 export function getUsers() {
   return get("agri_users");
 }
 
+export function saveUsers(users) {
+  return set("agri_users", users);
+}
+
 export function getUserByEmail(email) {
+  if (!email) return null;
   return getUsers().find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
@@ -41,7 +65,10 @@ export function getActiveProducts() {
 
 export function addProduct(product) {
   const products = getProducts();
-  const nextId = +(localStorage.getItem("agri_next_product_id") || products.length + 1);
+  const nextId = Math.max(
+    +(localStorage.getItem("agri_next_product_id") || 0),
+    products.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1
+  );
   const newProduct = { ...product, id: nextId, is_active: 1, created_at: new Date().toISOString() };
   products.push(newProduct);
   set("agri_products", products);
@@ -87,33 +114,83 @@ export function getOrdersByBuyer(buyerId) {
 }
 
 export function addOrder(order) {
+  const qty = Number(order.quantity);
+  const unitPrice = Number(order.unit_price);
+  if (!Number.isFinite(qty) || qty <= 0) {
+    return { error: "Order quantity must be greater than 0." };
+  }
+  if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+    return { error: "Unit price must be valid." };
+  }
+
+  const product = getProductById(order.product_id);
+  if (!product) {
+    return { error: "Selected produce listing no longer exists." };
+  }
+  if (STOCK_DEDUCTING_STATUSES.has(order.status) && qty > product.quantity_available) {
+    return { error: `Only ${product.quantity_available} ${product.unit} available in stock.` };
+  }
+
   const orders = getOrders();
-  const nextId = +(localStorage.getItem("agri_next_order_id") || orders.length + 1);
+  const nextId = Math.max(
+    +(localStorage.getItem("agri_next_order_id") || 0),
+    orders.reduce((max, o) => Math.max(max, Number(o.id) || 0), 0) + 1
+  );
   const newOrder = {
     ...order,
     id: nextId,
+    quantity: qty,
+    unit_price: unitPrice,
+    total_amount: +(qty * unitPrice).toFixed(2),
     ordered_at: order.ordered_at || new Date().toISOString().slice(0, 10),
   };
+
   orders.push(newOrder);
   set("agri_orders", orders);
   localStorage.setItem("agri_next_order_id", String(nextId + 1));
 
-  if (["confirmed", "completed"].includes(order.status)) {
-    const p = getProductById(order.product_id);
-    if (p) {
-      updateProduct(p.id, { quantity_available: Math.max(0, p.quantity_available - order.quantity) });
-    }
+  if (STOCK_DEDUCTING_STATUSES.has(newOrder.status)) {
+    updateProduct(product.id, {
+      quantity_available: +Math.max(0, product.quantity_available - qty).toFixed(2),
+    });
   }
-  return newOrder;
+
+  return { order: newOrder };
 }
 
 export function updateOrderStatus(id, newStatus) {
   const orders = getOrders();
   const idx = orders.findIndex((o) => o.id === id);
-  if (idx === -1) return null;
-  orders[idx] = { ...orders[idx], status: newStatus };
+  if (idx === -1) return { error: "Order not found." };
+
+  const currentOrder = orders[idx];
+  const prevStatus = currentOrder.status;
+  if (prevStatus === newStatus) return { order: currentOrder };
+
+  const wasDeducted = STOCK_DEDUCTING_STATUSES.has(prevStatus);
+  const willDeduct = STOCK_DEDUCTING_STATUSES.has(newStatus);
+  const product = getProductById(currentOrder.product_id);
+
+  if (product) {
+    if (!wasDeducted && willDeduct) {
+      if (currentOrder.quantity > product.quantity_available) {
+        return {
+          error: `Insufficient stock for '${product.name}' (${product.quantity_available} ${product.unit} left, order needs ${currentOrder.quantity} ${currentOrder.unit}).`,
+        };
+      }
+      updateProduct(product.id, {
+        quantity_available: +Math.max(0, product.quantity_available - currentOrder.quantity).toFixed(2),
+      });
+    } else if (wasDeducted && !willDeduct) {
+      updateProduct(product.id, {
+        quantity_available: +(product.quantity_available + currentOrder.quantity).toFixed(2),
+      });
+    }
+  }
+
+  orders[idx] = { ...currentOrder, status: newStatus };
   set("agri_orders", orders);
-  return orders[idx];
+  return { order: orders[idx] };
 }
 
 // ---------- market prices ----------
@@ -216,7 +293,7 @@ export function getFarmerKPIs(farmerId) {
   const products = getProductsByFarmer(farmerId);
   const orders = getOrdersByFarmer(farmerId);
   const activeProducts = products.filter((p) => p.is_active);
-  const completedOrders = orders.filter((o) => ["confirmed", "completed"].includes(o.status));
+  const completedOrders = orders.filter((o) => STOCK_DEDUCTING_STATUSES.has(o.status));
 
   const stockValue = activeProducts.reduce((s, p) => s + p.quantity_available * p.price_per_unit, 0);
   const lowStockCount = activeProducts.filter((p) => p.quantity_available <= 25).length;
@@ -251,7 +328,7 @@ export function getFarmerKPIs(farmerId) {
 }
 
 export function getMonthlyRevenue(farmerId, monthCount = 6) {
-  const orders = getOrdersByFarmer(farmerId).filter((o) => ["confirmed", "completed"].includes(o.status));
+  const orders = getOrdersByFarmer(farmerId).filter((o) => STOCK_DEDUCTING_STATUSES.has(o.status));
   const now = new Date();
   const months = [];
   for (let i = monthCount - 1; i >= 0; i--) {

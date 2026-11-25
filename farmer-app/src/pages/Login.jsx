@@ -120,11 +120,14 @@ export default function Login() {
         </form>
 
         <div style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link to="/register" style={{ fontWeight: 600 }}>
             Create an account
           </Link>
         </div>
+        <p style={{ textAlign: "center", marginTop: "0.75rem", fontSize: "0.74rem", color: "var(--text-dim)" }}>
+          Demo mode: authentication and data run locally in browser localStorage.
+        </p>
       </motion.div>
     </div>
   );

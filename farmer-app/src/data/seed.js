@@ -24,13 +24,13 @@ const CURRENCY = "₹";
 
 // ---------- demo users ----------
 const USERS = [
-  { id:1, role:"farmer", name:"Ramesh Patil", email:"ramesh@demo.com", phone:"9820011223",
+  { id:1, role:"farmer", name:"Ramesh Patil", email:"ramesh@demo.com", password:DEMO_PASSWORD, phone:"9820011223",
     farm_name:"Patil Farms", village:"Shirur", district:"Nashik", state:"Maharashtra" },
-  { id:2, role:"farmer", name:"Anita Devi", email:"anita@demo.com", phone:"9410055667",
+  { id:2, role:"farmer", name:"Anita Devi", email:"anita@demo.com", password:DEMO_PASSWORD, phone:"9410055667",
     farm_name:"Devi Organics", village:"Barwani", district:"Indore", state:"Madhya Pradesh" },
-  { id:3, role:"buyer", name:"Sunita Traders", email:"sunita@demo.com", phone:"9873344556",
+  { id:3, role:"buyer", name:"Sunita Traders", email:"sunita@demo.com", password:DEMO_PASSWORD, phone:"9873344556",
     farm_name:"Sunita Wholesale", village:"Nashik Road", district:"Nashik", state:"Maharashtra" },
-  { id:4, role:"admin", name:"Admin Monitor", email:"admin@demo.com", phone:"9000000000",
+  { id:4, role:"admin", name:"Admin Monitor", email:"admin@demo.com", password:DEMO_PASSWORD, phone:"9000000000",
     farm_name:"AgriDirect Platform", village:"HQ", district:"Pune", state:"Maharashtra" },
 ];
 

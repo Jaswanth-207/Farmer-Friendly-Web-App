@@ -76,7 +76,7 @@ export default function SaleForm() {
       return;
     }
 
-    addOrder({
+    const res = addOrder({
       product_id: selectedProduct.id,
       farmer_id: farmerId,
       buyer_id: null,
@@ -92,6 +92,12 @@ export default function SaleForm() {
       product_name: selectedProduct.name,
       unit: selectedProduct.unit,
     });
+
+    if (res?.error) {
+      setError(res.error);
+      addToast(res.error, "error");
+      return;
+    }
 
     addToast(`Recorded sale of ${q} ${selectedProduct.unit} '${selectedProduct.name}'!`, "success");
     navigate("/sales");

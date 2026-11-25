@@ -1,19 +1,39 @@
-import React, { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getOrdersByBuyer } from "../services/storageService";
+import { useToast } from "../hooks/useToast";
+import { getOrdersByBuyer, updateOrderStatus } from "../services/storageService";
 import { formatMoney, formatQty } from "../utils/formatters";
-import { ShoppingBag, ArrowRight } from "lucide-react";
+import ConfirmModal from "../components/ConfirmModal";
+import { ShoppingBag, ArrowRight, XCircle } from "lucide-react";
 
 export default function Orders() {
   const { user } = useAuth();
-  const buyerId = user?.id || 3;
+  const { addToast } = useToast();
+  const buyerId = user?.id;
+
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [cancelTarget, setCancelTarget] = useState(null);
 
   const orders = useMemo(() => {
+    void refreshKey;
+    if (!buyerId) return [];
     return getOrdersByBuyer(buyerId).sort(
       (a, b) => new Date(b.ordered_at) - new Date(a.ordered_at)
     );
-  }, [buyerId]);
+  }, [buyerId, refreshKey]);
+
+  const handleConfirmCancel = () => {
+    if (!cancelTarget) return;
+    const res = updateOrderStatus(cancelTarget.id, "cancelled");
+    if (res?.error) {
+      addToast(res.error, "error");
+    } else {
+      addToast(`Order for '${cancelTarget.product_name}' cancelled.`, "success");
+      setRefreshKey((k) => k + 1);
+    }
+    setCancelTarget(null);
+  };
 
   return (
     <div>
@@ -50,52 +70,83 @@ export default function Orders() {
                 <th className="num">Total Amount</th>
                 <th>Channel</th>
                 <th>Status</th>
+                <th style={{ textAlign: "right" }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {orders.map((o) => (
-                <tr key={o.id}>
-                  <td>{o.ordered_at}</td>
-                  <td>
-                    <strong>{o.product_name || "Produce"}</strong>
-                    {o.notes && (
-                      <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
-                        Note: {o.notes}
-                      </div>
-                    )}
-                  </td>
-                  <td className="num">
-                    {formatQty(o.quantity)} {o.unit}
-                  </td>
-                  <td className="num">{formatMoney(o.unit_price)}</td>
-                  <td className="num" style={{ fontWeight: 700, color: "var(--green)" }}>
-                    {formatMoney(o.total_amount)}
-                  </td>
-                  <td>
-                    <span className="badge badge-gray">{o.channel}</span>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        o.status === "completed"
-                          ? "badge-green"
-                          : o.status === "confirmed"
-                          ? "badge-blue"
-                          : o.status === "pending"
-                          ? "badge-yellow"
-                          : "badge-red"
-                      }`}
-                    >
-                      {o.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {orders.map((o) => {
+                const canCancel = o.status === "pending" || o.status === "confirmed";
+                return (
+                  <tr key={o.id}>
+                    <td style={{ whiteSpace: "nowrap" }}>{o.ordered_at}</td>
+                    <td>
+                      <strong>{o.product_name || "Produce"}</strong>
+                      {o.notes && (
+                        <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
+                          Note: {o.notes}
+                        </div>
+                      )}
+                    </td>
+                    <td className="num">
+                      {formatQty(o.quantity)} {o.unit}
+                    </td>
+                    <td className="num">{formatMoney(o.unit_price)}</td>
+                    <td className="num" style={{ fontWeight: 700, color: "var(--green)" }}>
+                      {formatMoney(o.total_amount)}
+                    </td>
+                    <td>
+                      <span className="badge badge-gray">{o.channel}</span>
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          o.status === "completed"
+                            ? "badge-green"
+                            : o.status === "confirmed"
+                            ? "badge-blue"
+                            : o.status === "pending"
+                            ? "badge-yellow"
+                            : "badge-red"
+                        }`}
+                      >
+                        {o.status}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      {canCancel ? (
+                        <button
+                          type="button"
+                          onClick={() => setCancelTarget(o)}
+                          className="btn btn-ghost btn-sm"
+                          style={{ color: "var(--red)" }}
+                        >
+                          <XCircle size={14} /> Cancel
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(cancelTarget)}
+        title="Cancel Purchase Order"
+        message={
+          cancelTarget
+            ? `Cancel your order for ${formatQty(cancelTarget.quantity)} ${cancelTarget.unit} of '${cancelTarget.product_name}'? If already confirmed, stock will be restored to the farmer.`
+            : ""
+        }
+        confirmLabel="Yes, Cancel Order"
+        danger
+        onConfirm={handleConfirmCancel}
+        onCancel={() => setCancelTarget(null)}
+      />
     </div>
   );
 }
-
